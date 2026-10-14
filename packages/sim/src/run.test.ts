@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { loadGameData } from '@loch/data';
+import { loadSpecGameData } from '@loch/data';
 import {
   RUN_PHASES,
   RunParseError,
@@ -11,7 +11,7 @@ import {
   setPhase,
 } from './index';
 
-const data = loadGameData();
+const data = loadSpecGameData();
 
 describe('createRun', () => {
   it('creates the starting state', () => {

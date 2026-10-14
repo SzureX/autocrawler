@@ -8,14 +8,14 @@
     "chamberWeight": 30,
     "minLevel": 1,
     "stats": {
-      "maxHp": 20,
-      "atk": 4,
+      "maxHp": 16,
+      "atk": 2,
       "aspd": 1.4,
       "def": 0,
-      "moveSpeed": 3.0,
+      "moveSpeed": 3,
       "critChance": 0,
       "critMult": 1.5,
-      "accuracy": 1.0,
+      "accuracy": 1,
       "range": 1
     }
   },
@@ -28,14 +28,14 @@
     "chamberWeight": 35,
     "minLevel": 1,
     "stats": {
-      "maxHp": 45,
-      "atk": 7,
-      "aspd": 1.0,
+      "maxHp": 36,
+      "atk": 3.5,
+      "aspd": 1,
       "def": 4,
-      "moveSpeed": 2.0,
+      "moveSpeed": 2,
       "critChance": 0,
       "critMult": 1.5,
-      "accuracy": 1.0,
+      "accuracy": 1,
       "range": 1
     }
   },
@@ -48,14 +48,14 @@
     "chamberWeight": 20,
     "minLevel": 1,
     "stats": {
-      "maxHp": 30,
-      "atk": 8,
+      "maxHp": 24,
+      "atk": 4,
       "aspd": 0.9,
       "def": 1,
       "moveSpeed": 1.8,
       "critChance": 0,
       "critMult": 1.5,
-      "accuracy": 1.0,
+      "accuracy": 1,
       "range": 5
     }
   },
@@ -68,14 +68,14 @@
     "chamberWeight": 15,
     "minLevel": 3,
     "stats": {
-      "maxHp": 110,
-      "atk": 11,
+      "maxHp": 88,
+      "atk": 5.5,
       "aspd": 0.6,
       "def": 8,
       "moveSpeed": 1.4,
       "critChance": 0,
       "critMult": 1.5,
-      "accuracy": 1.0,
+      "accuracy": 1,
       "range": 1
     }
   }

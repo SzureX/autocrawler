@@ -128,3 +128,12 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 - Znane problemy / dług: kamera nie podąża za bohaterem (widać cały pokój); wizualia to placeholdery; wskaźnik zagrożenia ma progi do dostrojenia w M7.
 - Jak to zobaczyć/uruchomić: pnpm dev; pnpm e2e (zrzuty w artifacts/screens/).
 - Proponowany następny krok: M7 (balans, telemetria, README).
+
+## Plan M7 (start: commit 484700f)
+
+- Boty (packages/sim/src/bots.ts) ZAMROŻONE od tego commita: nie zmieniam ich, żeby poprawić wyniki. Balans tylko w packages/data, maks. 12 iteracji, każda w docs/BALANCE.md.
+
+1. tools/balance.ts (+ worker threads): 10 000 runów na bota, metryki z sekcji 12.
+2. Telemetria lokalna: track(event, props) do bufora w pamięci + eksport JSON w overlayu.
+3. Iteracje balansu (dane), raport w docs/BALANCE.md.
+4. README, pnpm build, docs/FINAL_REPORT.md.
