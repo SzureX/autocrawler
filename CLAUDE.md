@@ -457,8 +457,8 @@ Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby da�
 ## 16. Status milestone'ów (aktualizuj po każdym)
 
 - [x] M0: Fundament (tag m0-done)
-- [ ] M1: Siatka i budowanie  ← **aktualny**
-- [ ] M2: Bohater, statystyki, artefakty
+- [x] M1: Siatka i budowanie (tag m1-done)
+- [ ] M2: Bohater, statystyki, artefakty  ← **aktualny**
 - [ ] M3: Symulacja walki
 - [ ] M4: Loot i ulepszenia pokoi
 - [ ] M5: Run i progresja
