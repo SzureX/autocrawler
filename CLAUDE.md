@@ -20,7 +20,7 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 3. **Najpierw `packages/sim` z testami, potem UI.** Żadnej logiki gry w komponentach React ani w kodzie widoku (Three.js).
 4. **Nigdy nie mów „gotowe”, jeśli nie uruchomiłeś `pnpm check`** i nie widziałeś, że przechodzi. Podaj w raporcie rzeczywisty wynik.
 5. **Nie naginaj testów, żeby przechodziły.** Test zmieniasz tylko wtedy, gdy jest błędny, i piszesz dlaczego.
-6. **Nowe zależności tylko po mojej akceptacji** (z uzasadnieniem). Zatwierdzone na start: `typescript`, `vite`, `@vitejs/plugin-react`, `react`, `react-dom`, `three`, `zustand`, `immer`, `zod`, `vitest`, `@playwright/test`, `@dnd-kit/core`, `eslint`, `prettier`, `tsx`. Zmiany względem pierwotnej listy: `pixi.js` zastąpiony przez `three` (+ `@types/three`, dev) na życzenie właściciela; do tego narzędzia deweloperskie bez wpływu na runtime (`@types/*`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`, `eslint-plugin-react-hooks`, `globals`).
+6. **Nowe zależności tylko po mojej akceptacji** (z uzasadnieniem). Zatwierdzone na start: `typescript`, `vite`, `@vitejs/plugin-react`, `react`, `react-dom`, `three`, `zustand`, `immer`, `zod`, `vitest`, `@playwright/test`, `@dnd-kit/core`, `eslint`, `prettier`, `tsx`. Zmiany względem pierwotnej listy: `pixi.js` zastąpiony przez `three` (+ `@types/three`, dev) na życzenie właściciela; do tego narzędzia deweloperskie bez wpływu na runtime (`@types/*`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`, `eslint-plugin-react-hooks`, `globals`). Usunięte w etapie porządkowym jako nieużywane: `immer` (`sim` aktualizuje `RunState` zwykłymi spreadami, zależność można dodać ponownie za zgodą), `happy-dom` (testy działają w środowisku Node) i zduplikowany `zod` w `apps/game` (parsowanie danych robi `packages/data`).
 7. **Niejasność w specyfikacji:** wybierz najprostszą opcję zgodną z tym plikiem, zapisz ją w `docs/DECISIONS.md` (data, decyzja, powód) i wspomnij w raporcie. Pytaj tylko wtedy, gdy decyzja blokuje dalszą pracę lub zmienia zasady gry.
 8. **Zakres jest zamrożony** (sekcja 13). Nowe pomysły trafiają do `docs/BACKLOG.md`, a nie do kodu.
 9. **Weryfikacja wizualna UI:** rób screenshoty przez Playwright (`artifacts/screens/`) i oglądaj je. Do M6 nie poświęcaj czasu na estetykę: placeholdery, czytelność ponad ładność.
@@ -58,7 +58,7 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 
 ## 4. Stack, struktura i komendy
 
-**Stack:** TypeScript (strict), Vite, Three.js (odtwarzanie walki w 3D), React (UI: menu, plecak, sloty, siatka lochu), Zustand (store UI, opakowuje `sim`), immer (niemutowalne aktualizacje `RunState`), Zod (walidacja danych), Vitest (testy), Playwright (e2e i screenshoty), dnd-kit (drag & drop). Menedżer pakietów: **pnpm** (workspaces). Node ≥ 20.
+**Stack:** TypeScript (strict), Vite, Three.js (odtwarzanie walki w 3D), React (UI: menu, plecak, sloty, siatka lochu), Zustand (store UI, opakowuje `sim`), Zod (walidacja danych), Vitest (testy), Playwright (e2e i screenshoty), dnd-kit (drag & drop). Menedżer pakietów: **pnpm** (workspaces). Node ≥ 20.
 
 ```
 /
@@ -510,6 +510,6 @@ Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby da�
 ### Etap porządkowy (dokumentacja zgodna z kodem, bez zmian w grze)
 
 - [x] Etap 1: CLAUDE.md zgodny z kodem (tag `cleanup-etap1`)
-- [ ] Etap 2: zależności  ← **aktualny**
-- [ ] Etap 3: README i dokumenty pomocnicze
+- [x] Etap 2: zależności (tag `cleanup-etap2`)
+- [ ] Etap 3: README i dokumenty pomocnicze  ← **aktualny**
 - [ ] Etap 4: domknięcie (FINAL_REPORT, merge do `prototype`, tag `cleanup-done`)

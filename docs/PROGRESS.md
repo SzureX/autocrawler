@@ -160,3 +160,8 @@ Plan: 1) zależność `three` (+ @types/three) zatwierdzona w rozmowie, `pixi.js
 ## Etap porządkowy, etap 1: CLAUDE.md zgodny z kodem
 
 - Zrobione: ścieżka meta.json, lista zatwierdzonych zależności (three, @types/three, narzędzia dev), struktura repo i komendy (sekcja 4), tabela skalowania 6.7 ze stanem faktycznym i notką OTWARTA, wyjątek Bossa w zamkniętym lochu w 6.2 (OTWARTA), strumienie RNG, sygnatury API i pole `nextUid`, tabele 8.1/8.2/8.4 ze stroionymi wartościami i pierwotnymi w nawiasach (8.3 i 8.5 bez zmian: zweryfikowano z fixtures), tabela „Stan faktyczny” pod celami balansu, sekcja 16. `grep -ri pixi` w CLAUDE.md zwraca tylko dwie wzmianki historyczne w opisie M3.9 i M6c.
+
+## Etap porządkowy, etap 2: zależności
+
+- Usunięte: `immer`, `happy-dom` (root), `zod` w `apps/game` (duplikat). Pozostałe sprawdzone i potrzebne (m.in. `@types/*` dla TypeScript, `tsx` w skryptach, `globals`, `@eslint/js`, `eslint-plugin-react-hooks`, `eslint-config-prettier` w konfiguracji ESLint). Wątpliwych brak.
+- Po usunięciu: `pnpm check` (182 testy), `pnpm e2e` (8/8), `pnpm build` zielone.
