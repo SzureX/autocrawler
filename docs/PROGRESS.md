@@ -96,3 +96,35 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 - Znane problemy / dług: UI nie jest jeszcze podpięte pod Start/Action/Resolve (M6c); boty zostaną zamrożone na początku M7.
 - Jak to zobaczyć/uruchomić: pnpm test (flow.test.ts).
 - Proponowany następny krok: M6a–d (UI).
+
+## Plan M6 (podetapy na gałęzi m6-ui, osobne commity m6a..m6d)
+
+- M6a: tooltip nad pokojem (typ, potwory ×liczba, elita, ulepszenie) + oferta kafelków; screenshot.
+- M6b: Prep: drag & drop (dnd-kit) artefaktów na sloty i ulepszeń na pokoje obok kliknięć, wskaźnik zagrożenia (`threat.ts` w sim, progi w danych), panel różnic; screenshot.
+- M6c: Start → ekran rajdu (Pixi, HUD HP/pokój/prędkości/Pomiń/log) → podsumowanie → kontynuacja; Victory/GameOver; akcje debug (wygraj/przegraj rajd, ustaw falę); `?seed=` w DEV.
+- M6d: letterbox 1920×1080, audyt i18n, VFX (liczby, błysk, animacja dropu).
+- Test e2e: bot klika przez UI cały run (Pomiń), zrzuty każdego ekranu, brak błędów konsoli.
+
+## Raport M6a: ekran klasy + oferta kafelków
+
+- Zrobione: tooltip nad pokojem (typ, potwory ikony ×liczba, elita, ulepszenie) w siatce Prep, oferta z listą potworów. Zrzuty: artifacts/screens/m6a-*.png.
+
+## Raport M6b: pełny Prep
+
+- Zrobione: drag & drop (dnd-kit) artefaktów na sloty i ulepszeń na pokoje plus te same akcje klikiem; wskaźnik zagrożenia (`estimateThreat` w sim, progi w balance.json), panel różnic przed/po (zielone/czerwone) przy najechaniu na slot; Start podpięty. Zrzuty m6b-*.png.
+
+## Raport M6c: rajd, podsumowanie, koniec runu
+
+- Zrobione: ekran rajdu w Pixi (HUD: HP, nazwa pokoju, 1×/2×/4×, Pomiń, log zdarzeń), podsumowanie rajdu (wynik, łup, utracone życie), Victory/GameOver ze statystykami i „Nowy run”; wynik rajdu liczony deterministycznie z RunState (odświeżenie w trakcie rajdu odtwarza ten sam rajd); akcje debug (wygraj/przegraj rajd, ustaw falę 9), `?seed=` w trybie DEV. Zrzuty m6c-*.png.
+
+## Raport M6d: skalowanie, i18n, VFX
+
+- Zrobione: scena 1920×1080 skalowana z letterboxem (poprawka wskaźnika dnd względem skali), test brak polskich liter i brak brakujących kluczy `t()` w kodzie, VFX: liczby obrażeń i leczenia, błysk trafienia, unoszące się 🎁 przy dropie.
+
+## Raport M6: UI i „game feel”
+
+- Wynik pnpm check: typecheck OK / lint OK / testy: 171 w 19 plikach. pnpm e2e: 8 testów OK (bot klikający przez UI cały run w trybie Pomiń do ekranu końcowego, Victory i GameOver przez overlay, drag & drop, tooltip, blokada Start, letterbox), zero błędów w konsoli. pnpm build OK.
+- Decyzje podjęte samodzielnie: patrz DECISIONS.md (M6).
+- Znane problemy / dług: kamera nie podąża za bohaterem (widać cały pokój); wizualia to placeholdery; wskaźnik zagrożenia ma progi do dostrojenia w M7.
+- Jak to zobaczyć/uruchomić: pnpm dev; pnpm e2e (zrzuty w artifacts/screens/).
+- Proponowany następny krok: M7 (balans, telemetria, README).

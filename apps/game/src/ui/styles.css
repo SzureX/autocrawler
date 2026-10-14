@@ -227,3 +227,183 @@ button.active {
   right: 2px;
   font-size: 14px;
 }
+.cell .tooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 0;
+  z-index: 20;
+  min-width: 190px;
+  padding: 6px 8px;
+  background: #0d0f14;
+  border: 1px solid #5a6a9a;
+  text-align: left;
+  font-size: 12px;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+.cell:hover .tooltip {
+  display: flex;
+}
+.cell.inactive {
+  cursor: default;
+}
+.drop-over {
+  outline: 2px solid #f2c14e;
+}
+.threat {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.threat-low {
+  background: #1f5a37;
+}
+.threat-medium {
+  background: #7a6420;
+}
+.threat-high {
+  background: #7a2a2a;
+}
+.raid-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.raid-hud {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.hp-bar {
+  position: relative;
+  width: 260px;
+  height: 22px;
+  background: #3a1f1f;
+  border: 1px solid #5a3a3a;
+}
+.hp-fill {
+  height: 100%;
+  background: #4caf70;
+}
+.hp-bar span {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  line-height: 22px;
+  font-size: 13px;
+}
+.raid-side {
+  width: 320px;
+}
+.event-log {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  font-size: 13px;
+  min-height: 150px;
+}
+.cell .tooltip {
+  display: none;
+  position: absolute;
+  left: 100%;
+  top: 0;
+  z-index: 20;
+  min-width: 190px;
+  padding: 6px 8px;
+  background: #0d0f14;
+  border: 1px solid #5a6a9a;
+  text-align: left;
+  font-size: 12px;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+.cell:hover .tooltip {
+  display: flex;
+}
+.cell.inactive {
+  cursor: default;
+}
+.drop-over {
+  outline: 2px solid #f2c14e;
+}
+.threat {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+}
+.threat-low {
+  background: #1f5a37;
+}
+.threat-medium {
+  background: #7a6420;
+}
+.threat-high {
+  background: #7a2a2a;
+}
+.life {
+  color: #e05252;
+}
+.life.lost {
+  color: #4a3a3a;
+}
+.raid-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.raid-hud {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.hp-bar {
+  position: relative;
+  width: 260px;
+  height: 22px;
+  background: #3a1f1f;
+  border: 1px solid #5a3a3a;
+}
+.hp-fill {
+  height: 100%;
+  background: #4caf70;
+}
+.hp-bar span {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  line-height: 22px;
+  font-size: 13px;
+}
+.raid-side {
+  width: 320px;
+}
+.event-log {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px;
+  font-size: 13px;
+  min-height: 150px;
+}
+.viewport {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #000;
+}
+.stage {
+  flex: none;
+  position: relative;
+  overflow: hidden;
+  background: #14161c;
+  transform-origin: center center;
+}

@@ -4,11 +4,14 @@ import {
   posKey,
   type Dir,
   type Pos,
+  type RoomInstance,
   type RoomTile,
   type RunState,
 } from '@loch/sim';
 import { t } from '../i18n';
 import { gameData } from '../store/gameStore';
+import { DropButton, roomDropId } from './dnd';
+import { roomTypeName, upgradeName } from './names';
 import { DoorIcon, SpawnList } from './TileView';
 
 interface Props {
@@ -22,7 +25,23 @@ interface Props {
   onRoomClick?: (roomKey: string) => void;
 }
 
-/** 9x9 dungeon grid with legal-position highlighting and a ghost preview of the hand tile. */
+/** Hover card over a built room: type, monsters (icons x count, elites marked) and upgrade. */
+export function RoomTooltip({ room }: { room: RoomInstance }) {
+  return (
+    <span className="tooltip" role="tooltip" data-testid="room-tooltip">
+      <strong>{roomTypeName(room.roomTypeId)}</strong>
+      <span>
+        {t('ui.tile.monsters')}: <SpawnList tile={room} />
+      </span>
+      <span>
+        {t('ui.tooltip.upgrade')}:{' '}
+        {room.upgradeId ? upgradeName(room.upgradeId) : t('ui.tooltip.none')}
+      </span>
+    </span>
+  );
+}
+
+/** 9x9 dungeon grid with legal-position highlighting, a ghost preview and room tooltips. */
 export function DungeonGrid({ run, tile, onPlace, selectedUpgrade, onRoomClick }: Props) {
   const { width, height } = gameData.balance.grid;
   const [hover, setHover] = useState<string | null>(null);
@@ -45,21 +64,32 @@ export function DungeonGrid({ run, tile, onPlace, selectedUpgrade, onRoomClick }
         : ghost && tile
           ? gameData.roomTypes[tile.roomTypeId]
           : undefined;
-      const classes = ['cell', room ? 'room' : '', isLegal ? 'legal' : '', ghost ? 'ghost' : '']
+      const active = isLegal || (room && onRoomClick && (selectedUpgrade || room.upgradeId));
+      const classes = [
+        'cell',
+        room ? 'room' : '',
+        isLegal ? 'legal' : '',
+        ghost ? 'ghost' : '',
+        active ? '' : 'inactive',
+      ]
         .filter(Boolean)
         .join(' ');
       cells.push(
-        <button
+        <DropButton
           key={key}
+          dropId={roomDropId(key)}
           type="button"
           className={classes}
           data-testid={`cell-${key}`}
           data-legal={isLegal ? 'true' : 'false'}
-          disabled={!isLegal && !(room && onRoomClick && (selectedUpgrade || room.upgradeId))}
+          aria-disabled={!active}
           onMouseEnter={() => setHover(key)}
           onMouseLeave={() => setHover((h) => (h === key ? null : h))}
-          onClick={() => (room ? onRoomClick?.(key) : onPlace({ x, y }))}
-          title={room ? undefined : isLegal ? t('ui.prep.placeHint') : undefined}
+          onClick={() => {
+            if (room) {
+              if (active) onRoomClick?.(key);
+            } else if (isLegal) onPlace({ x, y });
+          }}
         >
           {type && <span className="cell-icon">{type.icon}</span>}
           {doors.length > 0 && <DoorIcon doors={doors} />}
@@ -73,7 +103,8 @@ export function DungeonGrid({ run, tile, onPlace, selectedUpgrade, onRoomClick }
               <SpawnList tile={room} />
             </span>
           )}
-        </button>,
+          {room && <RoomTooltip room={room} />}
+        </DropButton>,
       );
     }
   }

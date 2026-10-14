@@ -1,8 +1,11 @@
-import { t } from '../i18n';
 import { dungeonLevel } from '@loch/sim';
+import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
 import { ClassSelectScreen } from './ClassSelectScreen';
+import { EndScreen } from './EndScreen';
 import { PrepScreen } from './PrepScreen';
+import { RaidScreen } from './RaidScreen';
+import { ResolveScreen } from './ResolveScreen';
 import { TileOfferScreen } from './TileOfferScreen';
 
 export function App() {
@@ -13,9 +16,18 @@ export function App() {
         <h1>{t('app.title')}</h1>
         {run && (
           <span data-testid="hud">
-            {t('app.lives')}: {'♥'.repeat(run.lives)} ·{' '}
-            {t('app.wave', { wave: run.wavesWon, max: gameData.balance.wavesToBoss })} ·{' '}
-            {t('app.dungeonLevel', { level: dungeonLevel(run) })}
+            <span data-testid="hud-lives" aria-label={t('app.lives')}>
+              {Array.from({ length: gameData.balance.startLives }, (_, i) => (
+                <span key={i} className={i < run.lives ? 'life' : 'life lost'}>
+                  ♥
+                </span>
+              ))}
+            </span>{' '}
+            ·{' '}
+            <span data-testid="hud-wave">
+              {t('app.wave', { wave: run.wavesWon, max: gameData.balance.wavesToBoss })}
+            </span>{' '}
+            · {t('app.dungeonLevel', { level: dungeonLevel(run) })}
           </span>
         )}
         <span data-testid="phase-label">
@@ -27,9 +39,9 @@ export function App() {
         <TileOfferScreen run={run} />
       )}
       {run && run.phase === 'Prep' && <PrepScreen run={run} />}
-      {run && !['TileOffer', 'BossOffer', 'Prep'].includes(run.phase) && (
-        <p>{t('app.placeholder')}</p>
-      )}
+      {run && run.phase === 'Action' && <RaidScreen run={run} />}
+      {run && run.phase === 'Resolve' && <ResolveScreen run={run} />}
+      {run && (run.phase === 'Victory' || run.phase === 'GameOver') && <EndScreen run={run} />}
     </main>
   );
 }

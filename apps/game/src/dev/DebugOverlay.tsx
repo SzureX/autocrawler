@@ -27,6 +27,8 @@ export function DebugOverlay() {
   const debugNextWave = useGameStore((s) => s.debugNextWave);
   const debugAddArtifact = useGameStore((s) => s.debugAddArtifact);
   const debugAddUpgrade = useGameStore((s) => s.debugAddUpgrade);
+  const debugResolve = useGameStore((s) => s.debugResolve);
+  const debugSetWaves = useGameStore((s) => s.debugSetWaves);
   const [artifactToAdd, setArtifactToAdd] = useState('iron_helm');
 
   useEffect(() => {
@@ -107,6 +109,17 @@ export function DebugOverlay() {
                   {u.icon}
                 </button>
               ))}
+            </div>
+            <div>
+              <button onClick={() => debugResolve(true)} data-testid="debug-win-raid">
+                {t('debug.winRaid')}
+              </button>
+              <button onClick={() => debugResolve(false)} data-testid="debug-lose-raid">
+                {t('debug.loseRaid')}
+              </button>
+              <button onClick={() => debugSetWaves(9)} data-testid="debug-waves-9">
+                {t('debug.setWaves')} 9
+              </button>
             </div>
             <button onClick={debugNextWave} data-testid="debug-next-wave">
               {t('debug.nextWave')}
