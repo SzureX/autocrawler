@@ -58,12 +58,15 @@ Widok rajdu nie liczy walki: tylko odtwarza log zdarzeń z `sim`. Dlatego wymian
 | Three.js                      | 0.186                      |
 | Zod, Zustand, `@dnd-kit/core` | aktualne wersje z rejestru |
 
-Dodatkowe zależności deweloperskie (bez wpływu na runtime): `@types/node`, `@types/react`, `@types/react-dom`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`, `eslint-plugin-react-hooks`, `globals`.
+Dodatkowe zależności deweloperskie (bez wpływu na runtime; `happy-dom` został usunięty): `@types/node`, `@types/react`, `@types/react-dom`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`, `eslint-plugin-react-hooks`, `globals`.
 
-## Do posprzątania
+## Zależności usunięte w etapie porządkowym (2026-10-15)
 
-- `immer` jest zainstalowany (był na liście zatwierdzonych), ale nigdzie nieużywany: `sim` aktualizuje stan zwykłymi spreadami.
-- `happy-dom` jest zainstalowany, ale testy działają w środowisku Node.
+- `immer` (nigdzie nieużywany; `sim` aktualizuje stan zwykłymi spreadami),
+- `happy-dom` (testy działają w środowisku Node),
+- `zod` w `apps/game` (duplikat; walidację danych robi `packages/data`, a `packages/sim` ma własną zależność).
+
+Pozostałe zależności (w tym `@types/node`, `@types/react`, `@types/react-dom`, `@types/three`, używane przez TypeScript) zostały sprawdzone i są potrzebne.
 
 ## Komendy
 

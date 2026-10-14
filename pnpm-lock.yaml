@@ -38,9 +38,6 @@ importers:
       globals:
         specifier: ^17.13.0
         version: 17.13.0
-      happy-dom:
-        specifier: ^21.0.1
-        version: 21.0.1
       prettier:
         specifier: ^3.9.10
         version: 3.9.10
@@ -71,9 +68,6 @@ importers:
       '@loch/sim':
         specifier: workspace:*
         version: link:../../packages/sim
-      immer:
-        specifier: ^11.1.21
-        version: 11.1.21
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -83,9 +77,6 @@ importers:
       three:
         specifier: ^0.186.1
         version: 0.186.1
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
       zustand:
         specifier: ^5.0.15
         version: 5.0.15(@types/react@19.3.0)(immer@11.1.21)(react@19.3.0)
@@ -1770,11 +1761,13 @@ snapshots:
 
   '@types/webxr@0.5.24': {}
 
-  '@types/whatwg-mimetype@3.0.2': {}
+  '@types/whatwg-mimetype@3.0.2':
+    optional: true
 
   '@types/ws@8.18.2':
     dependencies:
       '@types/node': 26.6.5
+    optional: true
 
   '@typescript-eslint/eslint-plugin@8.71.2(@typescript-eslint/parser@8.71.2(eslint@10.12.0)(typescript@6.0.3))(eslint@10.12.0)(typescript@6.0.3)':
     dependencies:
@@ -1917,6 +1910,7 @@ snapshots:
   buffer-image-size@0.6.4:
     dependencies:
       '@types/node': 26.6.5
+    optional: true
 
   cacheable@2.5.0:
     dependencies:
@@ -1950,7 +1944,8 @@ snapshots:
 
   electron-to-chromium@1.5.453: {}
 
-  entities@7.0.1: {}
+  entities@7.0.1:
+    optional: true
 
   es-module-lexer@2.3.2: {}
 
@@ -2124,6 +2119,7 @@ snapshots:
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
+    optional: true
 
   hashery@1.5.1:
     dependencies:
@@ -2143,7 +2139,8 @@ snapshots:
 
   ignore@7.0.12: {}
 
-  immer@11.1.21: {}
+  immer@11.1.21:
+    optional: true
 
   imurmurhash@0.1.4: {}
 
@@ -2429,7 +2426,8 @@ snapshots:
     transitivePeerDependencies:
       - msw
 
-  whatwg-mimetype@3.0.0: {}
+  whatwg-mimetype@3.0.0:
+    optional: true
 
   which@2.0.2:
     dependencies:
@@ -2439,7 +2437,8 @@ snapshots:
 
   word-wrap@1.2.5: {}
 
-  ws@8.22.0: {}
+  ws@8.22.0:
+    optional: true
 
   yallist@3.1.1: {}
 

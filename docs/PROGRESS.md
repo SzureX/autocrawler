@@ -150,3 +150,29 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 ## Przejście z Pixi na Three.js (wariant B, na życzenie właściciela)
 
 Plan: 1) zależność `three` (+ @types/three) zatwierdzona w rozmowie, `pixi.js` do usunięcia; 2) czyste moduły view/layout.ts (współrzędne, kamera, kierunek) z testami; 3) RaidCanvas na Three.js z tym samym API (init/load/setSpeed/skip/onState/destroy): pokój 3D z podłogą i ścianami, drzwi, światła i cienie, placeholdery brył per potwór, billboardy z emoji, paski HP, liczby obrażeń, błysk trafienia, kamera podążająca za bohaterem; 4) testy e2e i zrzuty; 5) aktualizacja CLAUDE.md/README/DECISIONS.
+
+## Etap porządkowy: stan wyjściowy (2026-10-15, gałąź `cleanup` z `prototype`, commit 6acb210)
+
+- `pnpm check`: typecheck, ESLint, Prettier czyste; 182 testy w 21 plikach przechodzą.
+- `pnpm build`: OK.
+- `pnpm e2e`: pierwsze uruchomienie 7 z 8 (timeout testu pełnego runu), kolejne 4 pełne uruchomienia 8 z 8 (ok. 26 s) i 2 uruchomienia samego testu OK. Traktowane jako rzadka niestabilność, opisana w BLOCKERS.md; kodu nie zmieniano.
+
+## Etap porządkowy, etap 1: CLAUDE.md zgodny z kodem
+
+- Zrobione: ścieżka meta.json, lista zatwierdzonych zależności (three, @types/three, narzędzia dev), struktura repo i komendy (sekcja 4), tabela skalowania 6.7 ze stanem faktycznym i notką OTWARTA, wyjątek Bossa w zamkniętym lochu w 6.2 (OTWARTA), strumienie RNG, sygnatury API i pole `nextUid`, tabele 8.1/8.2/8.4 ze stroionymi wartościami i pierwotnymi w nawiasach (8.3 i 8.5 bez zmian: zweryfikowano z fixtures), tabela „Stan faktyczny” pod celami balansu, sekcja 16. `grep -ri pixi` w CLAUDE.md zwraca tylko dwie wzmianki historyczne w opisie M3.9 i M6c.
+
+## Etap porządkowy, etap 2: zależności
+
+- Usunięte: `immer`, `happy-dom` (root), `zod` w `apps/game` (duplikat). Pozostałe sprawdzone i potrzebne (m.in. `@types/*` dla TypeScript, `tsx` w skryptach, `globals`, `@eslint/js`, `eslint-plugin-react-hooks`, `eslint-config-prettier` w konfiguracji ESLint). Wątpliwych brak.
+- Po usunięciu: `pnpm check` (182 testy), `pnpm e2e` (8/8), `pnpm build` zielone.
+
+## Etap porządkowy, etap 3: README i dokumenty pomocnicze
+
+- README.md przepisany (opis, wymagania z informacją o instalacji pnpm, komendy, dokumentacja, struktura), nowy docs/INDEX.md, zdanie o oczekiwaniu na playtest na górze QUESTIONS.md (pytania 1–4 i 6 otwarte bez zmian, pkt 5 rozwiązany), .gitignore uzupełniony (edytory, systemowe, logi, .env, .claude). Śledzone pliki, które powinny być ignorowane: brak (artifacts/ i test-results/ już poza indeksem). Kolejność wpisów w DECISIONS.md i PROGRESS.md jest chronologiczna, bez zmian.
+
+## Raport etapu porządkowego (etapy 1–4)
+
+- Zrobione: CLAUDE.md zgodny z kodem (Three.js, struktura, tabele ze stroionymi wartościami, tabela skalowania i wyjątek Bossa z adnotacją OTWARTA, stan faktyczny balansu), usunięte nieużywane zależności (`immer`, `happy-dom`, `zod` w `apps/game`), README, docs/INDEX.md, .gitignore, odświeżony FINAL_REPORT.md.
+- Wynik: `pnpm check` zielony (182 testy w 21 plikach), `pnpm build` OK, `pnpm e2e` 8/8 (w stanie wyjściowym raz timeout testu pełnego runu, opisany w BLOCKERS.md i BACKLOG.md).
+- Balans odczytany ponownie (10 000 runów na bota, bez strojenia): identyczny z docs/BALANCE.md (random 2,5%, greedy-atk 50,0%, greedy-hp 37,6%, 0 timeoutów).
+- Kodu gry, danych, botów ani reguł nie zmieniano. Otwarte pytania z QUESTIONS.md bez zmian merytorycznych.

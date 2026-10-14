@@ -1,6 +1,6 @@
 # Loch Roguelite: CLAUDE.md
 
-> Robocza nazwa gry: **Loch Roguelite** (placeholder, do zmiany w jednym miejscu: `packages/data/src/meta.json`).
+> Robocza nazwa gry: **Loch Roguelite** (placeholder, do zmiany w jednym miejscu: `packages/data/src/json/meta.json`).
 > Ten plik jest źródłem prawdy o grze i zasadach pracy. Jeśli coś w kodzie lub rozmowie mu przeczy, zatrzymaj się i zapytaj.
 
 ## 1. Czym jest ten projekt
@@ -20,7 +20,7 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 3. **Najpierw `packages/sim` z testami, potem UI.** Żadnej logiki gry w komponentach React ani w kodzie widoku (Three.js).
 4. **Nigdy nie mów „gotowe”, jeśli nie uruchomiłeś `pnpm check`** i nie widziałeś, że przechodzi. Podaj w raporcie rzeczywisty wynik.
 5. **Nie naginaj testów, żeby przechodziły.** Test zmieniasz tylko wtedy, gdy jest błędny, i piszesz dlaczego.
-6. **Nowe zależności tylko po mojej akceptacji** (z uzasadnieniem). Zatwierdzone na start: `typescript`, `vite`, `@vitejs/plugin-react`, `react`, `react-dom`, `three`, `zustand`, `immer`, `zod`, `vitest`, `@playwright/test`, `@dnd-kit/core`, `eslint`, `prettier`, `tsx`.
+6. **Nowe zależności tylko po mojej akceptacji** (z uzasadnieniem). Zatwierdzone na start: `typescript`, `vite`, `@vitejs/plugin-react`, `react`, `react-dom`, `three`, `zustand`, `immer`, `zod`, `vitest`, `@playwright/test`, `@dnd-kit/core`, `eslint`, `prettier`, `tsx`. Zmiany względem pierwotnej listy: `pixi.js` zastąpiony przez `three` (+ `@types/three`, dev) na życzenie właściciela; do tego narzędzia deweloperskie bez wpływu na runtime (`@types/*`, `typescript-eslint`, `@eslint/js`, `eslint-config-prettier`, `eslint-plugin-react-hooks`, `globals`). Usunięte w etapie porządkowym jako nieużywane: `immer` (`sim` aktualizuje `RunState` zwykłymi spreadami, zależność można dodać ponownie za zgodą), `happy-dom` (testy działają w środowisku Node) i zduplikowany `zod` w `apps/game` (parsowanie danych robi `packages/data`).
 7. **Niejasność w specyfikacji:** wybierz najprostszą opcję zgodną z tym plikiem, zapisz ją w `docs/DECISIONS.md` (data, decyzja, powód) i wspomnij w raporcie. Pytaj tylko wtedy, gdy decyzja blokuje dalszą pracę lub zmienia zasady gry.
 8. **Zakres jest zamrożony** (sekcja 13). Nowe pomysły trafiają do `docs/BACKLOG.md`, a nie do kodu.
 9. **Weryfikacja wizualna UI:** rób screenshoty przez Playwright (`artifacts/screens/`) i oglądaj je. Do M6 nie poświęcaj czasu na estetykę: placeholdery, czytelność ponad ładność.
@@ -58,25 +58,34 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 
 ## 4. Stack, struktura i komendy
 
-**Stack:** TypeScript (strict), Vite, Three.js (odtwarzanie walki w 3D), React (UI: menu, plecak, sloty, siatka lochu), Zustand (store UI, opakowuje `sim`), immer (niemutowalne aktualizacje `RunState`), Zod (walidacja danych), Vitest (testy), Playwright (e2e i screenshoty), dnd-kit (drag & drop). Menedżer pakietów: **pnpm** (workspaces). Node ≥ 20.
+**Stack:** TypeScript (strict), Vite, Three.js (odtwarzanie walki w 3D), React (UI: menu, plecak, sloty, siatka lochu), Zustand (store UI, opakowuje `sim`), Zod (walidacja danych), Vitest (testy), Playwright (e2e i screenshoty), dnd-kit (drag & drop). Menedżer pakietów: **pnpm** (workspaces). Node ≥ 20.
 
 ```
 /
-├─ CLAUDE.md
-├─ pnpm-workspace.yaml
-├─ tsconfig.base.json
-├─ docs/            DECISIONS.md, BACKLOG.md, BALANCE.md
+├─ CLAUDE.md, README.md
+├─ pnpm-workspace.yaml   (pakiety: packages/*, apps/*, tools)
+├─ tsconfig.base.json, eslint.config.js, vitest.config.ts
+├─ docs/            INDEX.md, DECISIONS.md, BACKLOG.md, BALANCE.md, PROGRESS.md,
+│                   QUESTIONS.md, BLOCKERS.md, FINAL_REPORT.md, TECH_STACK_CHANGES.md
 ├─ packages/
-│  ├─ sim/          czysty TS: rng, stats, dungeon, combat, loot, run
+│  ├─ sim/          czysty TS: rng, stats, artifacts, inventory, dungeon, tiles, route,
+│  │  │             combat/ (walka), loot, upgrades, flow (przebieg runu), threat, bots, serialize
 │  │  └─ src/ + testy obok plików (*.test.ts)
-│  └─ data/         JSON + schematy Zod + loader (loadGameData)
+│  └─ data/         json/ (dane gry, tu strojony balans), fixtures/ (zamrożone wartości startowe
+│                   do testów), schematy Zod, loader (loadGameData, loadSpecGameData)
 ├─ apps/
-│  └─ game/         Vite: React UI + Three.js view + store + i18n + save
-│     └─ src/{ui,view,store,i18n,save,dev}
-└─ tools/
-   ├─ balance.ts    headless runner N runów
-   └─ simulate.ts   pojedynczy rajd z seedem, wypisuje log
+│  └─ game/         Vite: React UI + widok Three.js + store + i18n + save + telemetria
+│     ├─ src/{ui,view,store,i18n,save,dev,telemetry}
+│     │   view/: RaidCanvas.ts (pętla, jednostki, kamera), roomStage.ts (pokój 3D),
+│     │          placeholders.ts (bryły i tekstury), layout.ts (geometria), playback.ts (odtwarzacz logu)
+│     │   dev/:  DebugOverlay.tsx, DevRaidPage.tsx (strona /dev/raid)
+│     └─ e2e/    testy Playwright (pełny run przez UI, ekrany, rajd w 3D)
+└─ tools/         pakiet workspace @loch/tools
+   ├─ balance.ts + balance-core.ts   headless runner N runów (wątki robocze)
+   └─ simulate.ts                    pojedynczy rajd z seedem, wypisuje log
 ```
+
+W trybie DEV (`pnpm dev`) działają dodatkowo: overlay debug (klawisz `` ` ``), strona `/dev/raid` (podgląd rajdu) i parametr `?seed=123` w adresie (powtarzalny run).
 
 **Komendy** (muszą istnieć i działać po M0):
 
@@ -88,10 +97,11 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 | `pnpm test` / `pnpm test:watch` | Vitest |
 | `pnpm typecheck` | `tsc --noEmit` we wszystkich pakietach |
 | `pnpm lint` | ESLint + Prettier check |
+| `pnpm format` | Prettier `--write` na całym repo |
 | `pnpm check` | typecheck + lint + test (**uruchom przed każdym commitem**) |
-| `pnpm e2e` | Playwright (smoke test + screenshoty) |
-| `pnpm balance -- --runs 10000 --bot greedy-atk` | raport balansu |
-| `pnpm sim:raid -- --seed 123 --class warrior` | pojedynczy rajd z logiem |
+| `pnpm e2e` | Playwright (pełny run przez UI + zrzuty w `artifacts/screens/`; pierwszy raz: `pnpm exec playwright install chromium`) |
+| `pnpm balance -- --runs 10000 --bot greedy-atk` | raport balansu (`--bot all` dla trzech botów, opcje `--threads`, `--seed`, `--label`, `--append`) |
+| `pnpm sim:raid -- --seed 123 --class warrior` | pojedynczy rajd z logiem (opcje `--waves`, `--artifacts`, `--quiet`) |
 
 ---
 
@@ -144,6 +154,7 @@ ClassSelect → TileOffer → Prep → Action → Resolve ─┬→ TileOffer   
 - **Poprawne położenie kafelka** `p`: komórka pusta i w siatce, sąsiaduje (4 kierunki) z ≥ 1 pokojem `r`, przy czym **`r` ma drzwi w stronę `p` ORAZ kafelek ma drzwi w stronę `r`**. Pokój łączy się ze **wszystkimi** sąsiadami spełniającymi ten warunek (mogą powstać cykle).
 - **Gwarancja braku soft locka:** generator ofert musi zapewnić, że **każdy oferowany kafelek ma ≥ 1 legalne położenie**. Jeśli nie ma, losuj maskę drzwi ponownie (do 20 razy), potem użyj maski z 4 drzwiami.
 - Maska drzwi kafelka: 2 drzwi (50%), 3 (35%), 4 (15%). Kafelek Bossa ma 4 drzwi, ale boss jest ślepym zaułkiem trasy.
+- **Wyjątek dla Bossa w zamkniętym lochu (dodany w M7, stan faktyczny w kodzie):** jeśli żadne drzwi w lochu nie prowadzą do wolnego pola (zdarzało się ok. 1 raz na 10 000 runów botów), kafelek Bossa może stanąć na dowolnym pustym polu sąsiadującym (4 kierunki) ze zwykłym pokojem, a ten pokój (pierwszy w kolejności N,E,S,W) dostaje drzwi w stronę Bossa. Bez tego run byłby niewygrywalny. Zwykły kafelek bez legalnego położenia (praktycznie niemożliwe) można odrzucić przyciskiem „Odrzuć kafelek” (`discardUnplaceableTile`); Bossa odrzucić nie można. **Decyzja właściciela: OTWARTA** (docs/QUESTIONS.md pkt 4; szczegóły w docs/DECISIONS.md).
 - **Trasa rajdu:** DFS (preorder, kolejność sąsiadów N,E,S,W) po pokojach niebędących Bossem, od pokoju nr 1. Przejścia między kolejnymi pokojami idą najkrótszą ścieżką po grafie (cofanie przez oczyszczone pokoje liczy się do czasu). Na końcu najkrótsza ścieżka do Bossa. Trasa jest funkcją czystą z testami na ≥ 20 układach.
 - **Skład potworów** jest losowany **raz, przy tworzeniu kafelka** (seed z `runSeed` + `tile.uid`) i potem **stały**. Gracz widzi go przy wyborze kafelka i w **tooltipie** nad pokojem (ikony × liczba, elita oznaczona). Statystyki potworów skalują się z `dungeonLevel` w momencie startu rajdu, a skład się nie zmienia.
 - Potwory **respawnują się przy każdym rajdzie** (też po porażce), bohater też.
@@ -180,7 +191,7 @@ Bohater **nie ma XP ani poziomów w runie**: moc pochodzi tylko z artefaktów. H
 - **Wejście do pokoju:** bohater pojawia się przy drzwiach, którymi wszedł. Wszystkie potwory w pokoju od razu go ścigają (brak promienia agro). Efekty `onEnter` pokoju działają przed pierwszym tikiem walki.
 - **Kolejność w tiku:** jednostki w rosnącej kolejności `id` (bohater ma id 0). Śmierci są przetwarzane na końcu tiku, więc obustronne zabójstwa w tym samym tiku są możliwe.
 - **Wybór celu:** najbliższy wróg, remis rozstrzyga niższe `id`. Ponowna ocena co 10 tików i po śmierci celu.
-- **Dystans:** Łucznik utrzymuje odstęp ≥ 3 komórek (cofa się, jeśli ma gdzie, inaczej strzela). Mag (bohater) atakuje z `range 4`, a trafienie zadaje 60% obrażeń wrogom w promieniu 1 od celu.
+- **Dystans:** Łucznik utrzymuje odstęp ≥ 3 komórek (cofa się, jeśli ma gdzie, inaczej strzela). Mag (bohater) atakuje z `range 4`, a trafienie zadaje 60% obrażeń wrogom w promieniu 1 od celu (wartość pierwotna; w danych po strojeniu 45%, patrz 8.1).
 - **Pokój oczyszczony** = wszystkie potwory martwe. Wtedy działają efekty `onClear`, a bohater idzie do następnego pokoju trasy.
 - **Koniec rajdu:** `RaidWon` (wszystkie pokoje oczyszczone, w rajdzie z Bossem: Boss martwy), `RaidLost` (HP bohatera = 0). **Zabezpieczenie:** limit 6000 tików (300 s symulowanych) → `RaidLost` z powodem `timeout`. W testach timeout nie może wystąpić (0 na 1000 rajdów).
 - **Efekty artefaktów:** `everyNthAttack` (co 5. atak: +100% × levelMult obrażeń), `lifesteal` (5% × levelMult zadanych obrażeń), `reflect` (15% × levelMult otrzymanych obrażeń, odbicie nie wyzwala odbicia), `executeBonus` (+50% × levelMult obrażeń wobec wrogów < 30% HP), `firstStrike` (pierwszy atak w każdym pokoju: +100% × levelMult).
@@ -201,14 +212,16 @@ Bohater **nie ma XP ani poziomów w runie**: moc pochodzi tylko z artefaktów. H
 
 | Poziom | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 (rajd z Bossem) |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| Mnożnik | 1.0 | 1.1 | 1.2 | 1.4 | 1.6 | 1.8 | 2.1 | 2.4 | 2.7 | 3.0 | 3.3 |
+| Mnożnik (stan faktyczny, `balance.json`) | 1.0 | 1.05 | 1.1 | 1.2 | 1.3 | 1.4 | 1.55 | 1.7 | 1.85 | 2.0 | 2.15 |
+
+*Wartości pierwotne (1.0, 1.1, 1.2, 1.4, 1.6, 1.8, 2.1, 2.4, 2.7, 3.0, 3.3) zostały spłaszczone w M7 (iteracja 3 balansu; przy wartościach pierwotnych żaden bot nie wygrywał). Decyzja właściciela o akceptacji: OTWARTA (docs/QUESTIONS.md pkt 2). Wartości pierwotne zachowuje zamrożony fixture testowy `packages/data/src/fixtures/balance.json`.*
 
 Bazowa liczba potworów w Komnacie przy generowaniu kafelka: poziomy 1–3: 2–3, 4–6: 3–4, 7–11: 4–5. Brutal pojawia się dopiero od poziomu 3. Bez dynamicznego dopasowania do siły bohatera.
 
 ### 6.8 RNG
 
 - Jeden generator `mulberry32` z ziarna `runSeed` (losowe, widoczne w debug overlay).
-- Funkcja `rng.fork(label, index)` wyprowadza niezależne strumienie przez hash `(seed, label, index)`. Używane strumienie: `tiles`, `spawns:<tileUid>`, `drops:<raidAttempt>`, `combat:<raidAttempt>`.
+- Funkcja `rng.fork(label, index)` wyprowadza niezależne strumienie przez hash `(seed, label, index)`. Używane strumienie: `tiles`, `spawns:<tileUid>`, `drops:<raidAttempt>`, `combat:<raidAttempt>`. W kodzie doszły niezależne strumienie `extra:<raidAttempt>` (kopie potworów od Ołtarza krwi) i `rewards:<raidAttempt>` (nagrody za oczyszczenie pokoju).
 - `raidAttempt` rośnie przy **każdym** rajdzie (też przegranym), więc powtórka tego samego lochu daje inny przebieg, ale odtwarzalny.
 
 ---
@@ -251,12 +264,17 @@ interface RunState {
   upgradeStorage: string[];           // roomUpgradeIds
   lastRaid: RaidSummary | null;
   stats: RunStats;
+  nextUid: number;                    // licznik deterministycznych id (kafelki, artefakty); dodany w M0
 }
+
+// RaidSummary: { won, reason, ticks, roomsCleared, lootArtifacts, lootUpgrades, livesLost, killer? }
 ```
 
 Dane (`packages/data`): `classes`, `artifacts`, `roomTypes`, `monsters`, `bosses`, `roomUpgrades`, `balance` (tabela skalowania, wagi, zakresy dropów). Wszystko po `id` w `snake_case`, nazwy i opisy jako **klucze i18n** (`nameKey`, `descKey`). Loader sprawdza unikalność `id` i istnienie wszystkich referencji (test).
 
 API `sim` (funkcje czyste, `RunState → RunState`): `createRun(seed, classId)`, `generateTileOffer`, `chooseTile`, `legalPlacements`, `placeTile`, `equip`, `unequip`, `mergeArtifacts`, `assignUpgrade`, `startRaid`, `simulateRaid`, `resolveRaid`, `computeHeroStats`, `computeRaidRoute`.
+
+*Stan faktyczny sygnatur:* funkcje wymagające danych przyjmują `GameData` jako pierwszy argument (np. `createRun(data, seed, classId)`, `simulateRaid(data, run)`, `placeTile(data, run, tileUid, pos)`); `resolveRaid(run, result)` przyjmuje wynik rajdu. Doszły m.in.: `continueRun` (Resolve → następna faza), `removeUpgrade`, `grantArtifact`, `applyRaidLoot`, `discardUnplaceableTile`, `playRaid`, `estimateThreat`, `playRun` (boty), `hashRaidLog`, `serializeRun`/`deserializeRun`.
 
 ---
 
@@ -264,27 +282,31 @@ API `sim` (funkcje czyste, `RunState → RunState`): `createRun(seed, classId)`,
 
 ### 8.1 Klasy (3)
 
+*Wartości po strojeniu w M7 (stan faktyczny w `packages/data/src/json/classes.json`); w nawiasie wartość pierwotna.*
+
 | id | HP | ATK | ASPD | DEF | Ruch | Krytyk | Zasięg | Cecha |
 |---|---|---|---|---|---|---|---|---|
-| `warrior` | 120 | 10 | 1.0 | 8 | 2.5 | 5% ×1.5 | 1 | Leczy 3% maxHP po zabiciu potwora |
-| `rogue` | 80 | 12 | 1.6 | 3 | 2.5 | 20% ×2.0 | 1 | Wysoki krytyk |
-| `mage` | 70 | 16 | 0.8 | 2 | 2.5 | 5% ×1.5 | 4 | Atak obszarowy (promień 1, 60% obrażeń) |
+| `warrior` | 156 (120) | 17 (10) | 1.0 | 8 | 2.5 | 5% ×1.5 | 1 | Leczy 2% (3%) maxHP po zabiciu potwora |
+| `rogue` | 195 (80) | 16 (12) | 1.6 | 7 (3) | 2.5 | 20% ×2.0 | 1 | Wysoki krytyk |
+| `mage` | 135 (70) | 20 (16) | 0.8 | 8 (2) | 2.5 | 5% ×1.5 | 4 | Atak obszarowy (promień 1, 45% (60%) obrażeń) |
 
 ### 8.2 Potwory (4 + Boss)
 
+*Wartości po strojeniu w M7 (`monsters.json`, `bosses.json`); w nawiasie wartość pierwotna.*
+
 | id | HP | ATK | ASPD | DEF | Ruch | Zasięg | Rola |
 |---|---|---|---|---|---|---|---|
-| `rat` | 20 | 4 | 1.4 | 0 | 3.0 | 1 | Szybki, słaby, w grupach |
-| `skeleton` | 45 | 7 | 1.0 | 4 | 2.0 | 1 | Standardowy wojownik |
-| `archer` | 30 | 8 | 0.9 | 1 | 1.8 | 5 | Dystans, trzyma odstęp 3 |
-| `brute` | 110 | 11 | 0.6 | 8 | 1.4 | 1 | Wolny, dużo HP (od poziomu 3) |
-| `warden` (Boss) | 600 | 14 | 0.8 | 10 | 1.6 | 1 | 2 fazy: przy ≤ 50% HP jednorazowo wzywa 2 szkielety i ma ASPD ×1.3 |
+| `rat` | 16 (20) | 2 (4) | 1.4 | 0 | 3.0 | 1 | Szybki, słaby, w grupach |
+| `skeleton` | 36 (45) | 3.5 (7) | 1.0 | 4 | 2.0 | 1 | Standardowy wojownik |
+| `archer` | 24 (30) | 3.2 (8) | 0.9 | 1 | 1.8 | 5 | Dystans, trzyma odstęp 3 |
+| `brute` | 80 (110) | 5.5 (11) | 0.6 | 8 | 1.4 | 1 | Wolny, dużo HP (od poziomu 3) |
+| `warden` (Boss) | 220 (600) | 7 (14) | 0.8 | 8 (10) | 1.6 | 1 | 2 fazy: przy ≤ 50% HP jednorazowo wzywa 2 szkielety i ma ASPD ×1.3 |
 
 **Elita:** HP ×2.5, ATK ×1.5, waga dropu ×3. Wagi wyboru potworu w Komnacie: `rat` 30, `skeleton` 35, `archer` 20, `brute` 15.
 
 ### 8.3 Typy pokoi (5 + Boss)
 
-Wagi w ofercie kafelków: Komnata 40, pozostałe po 15. W ofercie 3 kafelków typy różne, jeśli się da.
+Wagi w ofercie kafelków: Komnata 40, pozostałe po 15. W ofercie 3 kafelków typy różne, jeśli się da. *(Tabela bez zmian po strojeniu.)*
 
 | id | Skład potworów | Efekt |
 |---|---|---|
@@ -299,25 +321,29 @@ Wagi w ofercie kafelków: Komnata 40, pozostałe po 15. W ofercie 3 kafelków ty
 
 Waga dropu w obrębie rzadkości: równa. Tagi (`tank`, `blade`, `swift`, `vampire`) są tylko w danych, bez mechaniki w prototypie.
 
+*Wartości po strojeniu w M7 (`artifacts.json`); w nawiasie wartość pierwotna. Wartości efektów z 6.5 (np. „5%”, „15%”, „+100%”) to wartości pierwotne, obowiązują te z tej tabeli.*
+
 | id | Rzadkość | Efekt | Tag |
 |---|---|---|---|
-| `iron_helm` | common | +20 maxHp (flat) | tank |
-| `leather_armor` | common | +3 def (flat) | tank |
-| `sharp_dagger` | common | +3 atk (flat) | blade |
-| `runner_boots` | common | +10% moveSpeed (percentAdd 0.10) | swift |
-| `swift_ring` | rare | +15% aspd (percentAdd) | swift |
-| `vigor_amulet` | rare | +15% maxHp (percentAdd) | tank |
-| `rune_sword` | rare | +20% atk (percentAdd) | blade |
-| `hunter_monocle` | rare | +8% critChance (flat 0.08) | blade |
-| `guardian_mail` | epic | +6 def (flat), +10% maxHp (percentAdd) | tank |
-| `ruler_crown` | epic | +15% atk, +10% aspd (percentAdd) | blade |
-| `echo_hammer` | rare | efekt `everyNthAttack` (n=5, +100%) | blade |
-| `vampire_stone` | rare | efekt `lifesteal` (5%) | vampire |
-| `thorn_spikes` | rare | efekt `reflect` (15%) | tank |
-| `headhunter_ring` | epic | efekt `executeBonus` (+50% poniżej 30% HP) | blade |
-| `first_blow_signet` | epic | efekt `firstStrike` (+100%) | blade |
+| `iron_helm` | common | +33.6 (20) maxHp (flat) | tank |
+| `leather_armor` | common | +5.04 (3) def (flat) | tank |
+| `sharp_dagger` | common | +6 (3) atk (flat) | blade |
+| `runner_boots` | common | +20% (10%) moveSpeed (percentAdd 0.20) | swift |
+| `swift_ring` | rare | +30% (15%) aspd (percentAdd) | swift |
+| `vigor_amulet` | rare | +25.2% (15%) maxHp (percentAdd) | tank |
+| `rune_sword` | rare | +40% (20%) atk (percentAdd) | blade |
+| `hunter_monocle` | rare | +16% (8%) critChance (flat 0.16) | blade |
+| `guardian_mail` | epic | +10.08 (6) def (flat), +16.8% (10%) maxHp (percentAdd) | tank |
+| `ruler_crown` | epic | +30% (15%) atk, +20% (10%) aspd (percentAdd) | blade |
+| `echo_hammer` | rare | efekt `everyNthAttack` (n=5, +200% (+100%)) | blade |
+| `vampire_stone` | rare | efekt `lifesteal` (5%, bez zmian) | vampire |
+| `thorn_spikes` | rare | efekt `reflect` (25.2% (15%)) | tank |
+| `headhunter_ring` | epic | efekt `executeBonus` (+100% (+50%) poniżej 30% HP) | blade |
+| `first_blow_signet` | epic | efekt `firstStrike` (+200% (+100%)) | blade |
 
 ### 8.5 Ulepszenia pokoi (8)
+
+*Tabela bez zmian po strojeniu.*
 
 | id | Efekt |
 |---|---|
@@ -382,7 +408,7 @@ Każdy milestone kończy się: zielonym `pnpm check`, raportem (sekcja 2) i aktu
 
 ### M3: Symulacja walki
 - Plansza pokoju, A*, AI wyboru celu, ataki, krytyki, accuracy, efekty artefaktów, efekty pokoi (`onEnter`/`onClear`), przejścia między pokojami, 4 potwory + Boss z fazami, log zdarzeń, limit tików.
-- **M3.9:** dev-owa strona `/dev/raid` w Pixi odtwarzająca log (placeholdery, prędkości 1×/2×/4×, „Pomiń”) i screenshot Playwright.
+- **M3.9:** dev-owa strona `/dev/raid` odtwarzająca log (zrealizowana najpierw w Pixi, od przejścia na Three.js w 3D) (placeholdery, prędkości 1×/2×/4×, „Pomiń”) i screenshot Playwright.
 - **Gotowe, gdy:** 1000 rajdów headless bez zawieszenia i **bez timeoutu**, ten sam seed → identyczny hash logu, testy poszczególnych mechanik (zasięg, cooldown, AoE Maga, lifesteal, odbicie, faza Bossa), `tools/simulate.ts` działa.
 
 ### M4: Loot i ulepszenia pokoi
@@ -397,7 +423,7 @@ Każdy milestone kończy się: zielonym `pnpm check`, raportem (sekcja 2) i aktu
 Wykonuj podetapami, każdy z screenshotem i raportem:
 - **M6a:** ekran klasy + oferta kafelków (tooltip ze składem potworów).
 - **M6b:** pełny Prep (drag & drop + kliknięcia, wskaźnik zagrożenia, panel różnic).
-- **M6c:** ekran rajdu (Pixi, HUD, log, prędkości) + podsumowanie rajdu + Victory/GameOver.
+- **M6c:** ekran rajdu (widok rajdu, wtedy w Pixi, dziś Three.js; HUD, log, prędkości) + podsumowanie rajdu + Victory/GameOver.
 - **M6d:** skalowanie 1920×1080, i18n bez twardych tekstów, minimalne VFX (liczby obrażeń, błysk trafienia, animacja dropu).
 - **Gotowe, gdy:** test Playwright przechodzi cały run (bot klikający przez UI, tryb „Pomiń”) i zapisuje screenshoty każdego ekranu, bez błędów w konsoli.
 
@@ -422,6 +448,21 @@ Wykonuj podetapami, każdy z screenshotem i raportem:
 | Artefakty na run | ~45–65 dropów, scalenie do poziomu 2 typowe, poziomu 3 możliwe dla pospolitych |
 
 Balans zmieniamy **wyłącznie w danych** (`packages/data`), a po każdej zmianie uruchamiamy `pnpm balance` i wklejamy wynik do raportu.
+
+### Stan faktyczny (M7, iteracja 12 z docs/BALANCE.md, 10 000 runów na bota; cele powyżej bez zmian)
+
+| Metryka | Wynik | Status |
+|---|---|---|
+| Wygrane `greedy-atk` / `greedy-hp` (35–55%) | 50,0% / 37,6% | spełnione |
+| `random` ≥ 10 pkt proc. gorszy niż `greedy` | 2,5% | spełnione |
+| Rozrzut wygranych między klasami (≤ 15 pkt proc.) | `greedy-atk` 14,8; `random` 7,0; `greedy-hp` 37,5 (mag 17,6%, łotrzyk 55,1%) | **niespełnione** dla `greedy-hp` |
+| Mediana rajdu na poz. ≥ 4 (30–90 s) | 41,0 s (atk), 78,8 s (hp), 43,3 s (random) | spełnione |
+| Rajdy na poz. 1–3 (≥ 15 s) | mediana ok. 9 s (poz. 1), ok. 14 s (poz. 2), ok. 18 s (poz. 3) | **częściowo niespełnione** |
+| Pełny run (20–35 min, szacunek) | 17,1 min (atk), 24,4 min (hp), 17,0 min (random) | spełnione dla hp; **niespełnione** dla atk i random |
+| Timeouty rajdu (0) | 0 na ok. 390 000 rajdów | spełnione |
+| Artefakty na run (45–65) | 74–87 (z nagrodami za oczyszczenie pokoi) | **niespełnione** |
+
+Otwarte decyzje właściciela dotyczące balansu: docs/QUESTIONS.md pkt 1–3.
 
 ---
 
@@ -464,3 +505,11 @@ Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby da�
 - [x] M5: Run i progresja (tag m5-done)
 - [x] M6: UI i „game feel” (a, b, c, d) (tag m6-done)
 - [x] M7: Balans, telemetria, domknięcie (tag m7-done)
+- [x] Przejście z Pixi na Three.js, wariant B (tag three-view-done)
+
+### Etap porządkowy (dokumentacja zgodna z kodem, bez zmian w grze)
+
+- [x] Etap 1: CLAUDE.md zgodny z kodem (tag `cleanup-etap1`)
+- [x] Etap 2: zależności (tag `cleanup-etap2`)
+- [x] Etap 3: README i dokumenty pomocnicze (tag `cleanup-etap3`)
+- [x] Etap 4: domknięcie (tag `cleanup-done`)
