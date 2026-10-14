@@ -169,3 +169,10 @@ Plan: 1) zależność `three` (+ @types/three) zatwierdzona w rozmowie, `pixi.js
 ## Etap porządkowy, etap 3: README i dokumenty pomocnicze
 
 - README.md przepisany (opis, wymagania z informacją o instalacji pnpm, komendy, dokumentacja, struktura), nowy docs/INDEX.md, zdanie o oczekiwaniu na playtest na górze QUESTIONS.md (pytania 1–4 i 6 otwarte bez zmian, pkt 5 rozwiązany), .gitignore uzupełniony (edytory, systemowe, logi, .env, .claude). Śledzone pliki, które powinny być ignorowane: brak (artifacts/ i test-results/ już poza indeksem). Kolejność wpisów w DECISIONS.md i PROGRESS.md jest chronologiczna, bez zmian.
+
+## Raport etapu porządkowego (etapy 1–4)
+
+- Zrobione: CLAUDE.md zgodny z kodem (Three.js, struktura, tabele ze stroionymi wartościami, tabela skalowania i wyjątek Bossa z adnotacją OTWARTA, stan faktyczny balansu), usunięte nieużywane zależności (`immer`, `happy-dom`, `zod` w `apps/game`), README, docs/INDEX.md, .gitignore, odświeżony FINAL_REPORT.md.
+- Wynik: `pnpm check` zielony (182 testy w 21 plikach), `pnpm build` OK, `pnpm e2e` 8/8 (w stanie wyjściowym raz timeout testu pełnego runu, opisany w BLOCKERS.md i BACKLOG.md).
+- Balans odczytany ponownie (10 000 runów na bota, bez strojenia): identyczny z docs/BALANCE.md (random 2,5%, greedy-atk 50,0%, greedy-hp 37,6%, 0 timeoutów).
+- Kodu gry, danych, botów ani reguł nie zmieniano. Otwarte pytania z QUESTIONS.md bez zmian merytorycznych.
