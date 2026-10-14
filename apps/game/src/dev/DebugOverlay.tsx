@@ -25,6 +25,8 @@ export function DebugOverlay() {
   const debugSetPhase = useGameStore((s) => s.debugSetPhase);
   const resetRun = useGameStore((s) => s.resetRun);
   const debugNextWave = useGameStore((s) => s.debugNextWave);
+  const debugAddArtifact = useGameStore((s) => s.debugAddArtifact);
+  const [artifactToAdd, setArtifactToAdd] = useState('iron_helm');
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -73,6 +75,26 @@ export function DebugOverlay() {
             </button>
           ))}
           <div style={{ marginTop: 6 }}>
+            <div>
+              <select
+                value={artifactToAdd}
+                onChange={(e) => setArtifactToAdd(e.target.value)}
+                aria-label={t('debug.artifactToAdd')}
+                data-testid="debug-artifact-select"
+              >
+                {Object.values(gameData.artifacts).map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {t(a.nameKey)}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => debugAddArtifact(artifactToAdd)}
+                data-testid="debug-add-artifact"
+              >
+                {t('debug.addArtifact')}
+              </button>
+            </div>
             <button onClick={debugNextWave} data-testid="debug-next-wave">
               {t('debug.nextWave')}
             </button>

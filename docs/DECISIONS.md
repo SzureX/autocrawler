@@ -15,3 +15,5 @@ Format: data, decyzja, powód.
 - 2026-10-14 (M1): Strumień `tiles` ma indeks `wavesWon`, więc oferta jest funkcją stanu runu. Powód: determinizm bez dodatkowego licznika.
 - 2026-10-14 (M1): Gdyby nawet maska 4-drzwiowa nie miała legalnej pozycji (praktycznie niemożliwe), oferta i tak jest zwrócona; M5 obsługuje to jako pominięcie kafelka. Powód: nie blokować generatora, brak soft locka w testach 1000+ ofert.
 - 2026-10-14 (M1): Pokój nr 1 ma losowany skład potworów jak Komnata poziomu 1 (aktualizacja wpisu z M0). Powód: pierwszy rajd ma realną walkę.
+- 2026-10-14 (M2): Clampy statystyk w `computeStats`: critChance 0..1, aspd i moveSpeed ≥ 0.1, maxHp ≥ 1, critMult ≥ 1, range ≥ 1, atk/def/accuracy ≥ 0. Powód: ochrona przed degeneracją, spec nie podaje limitów.
+- 2026-10-14 (M2): Zakładanie artefaktu na zajęty slot zamienia go z plecakiem; scalanie zużywa pierwsze 3 pasujące egzemplarze w kolejności plecaka. Powód: najprostsze zachowanie.

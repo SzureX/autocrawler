@@ -4,9 +4,13 @@ import {
   chooseTile,
   createRun,
   debugForcePhase,
+  equip,
   generateBossOffer,
   generateTileOffer,
+  grantArtifact,
+  mergeArtifacts,
   placeTile,
+  unequip,
   type Pos,
   type RunPhase,
   type RunState,
@@ -29,6 +33,10 @@ interface GameStore {
   setRun: (run: RunState) => void;
   chooseTile: (tileUid: string) => void;
   placeTile: (tileUid: string, pos: Pos) => void;
+  equipArtifact: (artifactUid: string, slot: number) => void;
+  unequipSlot: (slot: number) => void;
+  mergeStack: (artifactId: string, level: 1 | 2 | 3) => void;
+  debugAddArtifact: (artifactId: string, level?: 1 | 2 | 3) => void;
   debugSetPhase: (phase: RunPhase) => void;
   /** Debug: counts a won raid and opens the next tile offer (the full flow arrives in M5). */
   debugNextWave: () => void;
@@ -46,6 +54,22 @@ export const useGameStore = create<GameStore>((set, get) => ({
   placeTile: (tileUid, pos) => {
     const { run } = get();
     if (run) set({ run: placeTile(gameData, run, tileUid, pos) });
+  },
+  equipArtifact: (artifactUid, slot) => {
+    const { run } = get();
+    if (run) set({ run: equip(run, artifactUid, slot) });
+  },
+  unequipSlot: (slot) => {
+    const { run } = get();
+    if (run) set({ run: unequip(run, slot) });
+  },
+  mergeStack: (artifactId, level) => {
+    const { run } = get();
+    if (run) set({ run: mergeArtifacts(gameData, run, artifactId, level) });
+  },
+  debugAddArtifact: (artifactId, level = 1) => {
+    const { run } = get();
+    if (run) set({ run: grantArtifact(gameData, run, artifactId, level) });
   },
   debugSetPhase: (phase) => {
     const { run } = get();

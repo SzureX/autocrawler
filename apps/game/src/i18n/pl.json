@@ -125,5 +125,18 @@
   "dir.E": "E",
   "dir.S": "S",
   "dir.W": "W",
-  "debug.nextWave": "Następna fala (oferta)"
+  "debug.nextWave": "Następna fala (oferta)",
+  "ui.inv.backpack": "Plecak",
+  "ui.inv.slots": "Ekwipunek",
+  "ui.inv.merge": "Scal",
+  "ui.inv.mergeActive": "Scalanie: wybierz stos z 3 sztukami",
+  "ui.inv.level": "poz. {level}",
+  "ui.inv.empty": "puste",
+  "ui.inv.slot": "Slot {n}",
+  "ui.inv.backpackEmpty": "Plecak jest pusty.",
+  "ui.inv.selectHint": "Kliknij slot, aby założyć wybrany artefakt.",
+  "ui.inv.pickHint": "Kliknij artefakt w plecaku, potem slot. Kliknij założony artefakt, aby go zdjąć.",
+  "ui.inv.stats": "Statystyki",
+  "debug.addArtifact": "Dodaj artefakt",
+  "debug.artifactToAdd": "Artefakt do dodania"
 }

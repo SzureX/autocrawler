@@ -10,3 +10,6 @@ export * from './tiles';
 export * from './route';
 export * from './run';
 export * from './serialize';
+export * from './stats';
+export * from './artifacts';
+export * from './inventory';
