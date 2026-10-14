@@ -5,3 +5,10 @@ artifacts/
 test-results/
 playwright-report/
 .DS_Store
+.vscode/
+.idea/
+Thumbs.db
+*.log
+*.local
+.env
+.claude/

@@ -511,5 +511,5 @@ Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby da�
 
 - [x] Etap 1: CLAUDE.md zgodny z kodem (tag `cleanup-etap1`)
 - [x] Etap 2: zależności (tag `cleanup-etap2`)
-- [ ] Etap 3: README i dokumenty pomocnicze  ← **aktualny**
-- [ ] Etap 4: domknięcie (FINAL_REPORT, merge do `prototype`, tag `cleanup-done`)
+- [x] Etap 3: README i dokumenty pomocnicze (tag `cleanup-etap3`)
+- [ ] Etap 4: domknięcie (FINAL_REPORT, merge do `prototype`, tag `cleanup-done`)  ← **aktualny**

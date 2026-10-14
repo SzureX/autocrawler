@@ -165,3 +165,7 @@ Plan: 1) zależność `three` (+ @types/three) zatwierdzona w rozmowie, `pixi.js
 
 - Usunięte: `immer`, `happy-dom` (root), `zod` w `apps/game` (duplikat). Pozostałe sprawdzone i potrzebne (m.in. `@types/*` dla TypeScript, `tsx` w skryptach, `globals`, `@eslint/js`, `eslint-plugin-react-hooks`, `eslint-config-prettier` w konfiguracji ESLint). Wątpliwych brak.
 - Po usunięciu: `pnpm check` (182 testy), `pnpm e2e` (8/8), `pnpm build` zielone.
+
+## Etap porządkowy, etap 3: README i dokumenty pomocnicze
+
+- README.md przepisany (opis, wymagania z informacją o instalacji pnpm, komendy, dokumentacja, struktura), nowy docs/INDEX.md, zdanie o oczekiwaniu na playtest na górze QUESTIONS.md (pytania 1–4 i 6 otwarte bez zmian, pkt 5 rozwiązany), .gitignore uzupełniony (edytory, systemowe, logi, .env, .claude). Śledzone pliki, które powinny być ignorowane: brak (artifacts/ i test-results/ już poza indeksem). Kolejność wpisów w DECISIONS.md i PROGRESS.md jest chronologiczna, bez zmian.
