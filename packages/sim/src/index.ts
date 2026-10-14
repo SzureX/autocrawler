@@ -18,3 +18,5 @@ export * from './combat/board';
 export { simulateRaid, hashRaidLog, type SimulateOptions } from './combat/raid';
 export { roomMods, type RoomMods } from './combat/units';
 export * from './autobuild';
+export * from './loot';
+export * from './upgrades';

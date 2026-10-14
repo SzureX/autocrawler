@@ -1,8 +1,9 @@
-import type { ClassDef, GameData, RoomTypeDef } from '@loch/data';
-import type { ActiveEffect } from '../artifacts';
-import type { Rng } from '../rng';
-import type { RoomInstance } from '../types';
-import { cheb, findRetreat, findStep, inBoard, type BoardSize } from './board';
+import type { RoomTypeDef } from '@loch/data';
+import type { DropSpec } from '../loot';
+import type { RoomInstance, SpawnSpec } from '../types';
+import { cheb, findRetreat, findStep, inBoard } from './board';
+import { emit, type RaidContext } from './context';
+import { collectDrops, grantClearRewards } from './rewards';
 import {
   cooldownTicksFor,
   makeBossUnit,
@@ -10,44 +11,7 @@ import {
   type RoomMods,
   type ScalingContext,
 } from './units';
-import {
-  ENVIRONMENT,
-  type Cell,
-  type DamageKind,
-  type HealSource,
-  type RaidEvent,
-  type Unit,
-} from './types';
-
-/** State shared by the whole raid. */
-export interface RaidContext {
-  data: GameData;
-  rng: Rng;
-  log: RaidEvent[] | null;
-  tick: number;
-  tickLimit: number;
-  nextUnitId: number;
-  board: BoardSize;
-  hero: Unit;
-  heroBase: { aspd: number; accuracy: number };
-  effects: ActiveEffect[];
-  /** Attack counters, parallel to `effects` (used by "every Nth attack"). */
-  counters: number[];
-  trait: ClassDef['trait'];
-  levelMult: number;
-  kills: number;
-  lastHitBy: Record<number, number>;
-  /** Monster id by unit id (for death reports). */
-  names: Record<number, string>;
-  /** Hook called for every monster death (loot drops). */
-  onMonsterDeath: ((unit: Unit) => void) | null;
-  /** Hook called when a room is cleared (room rewards). */
-  onRoomCleared: ((room: RoomInstance, type: RoomTypeDef) => void) | null;
-}
-
-export function emit(ctx: RaidContext, event: RaidEvent): void {
-  if (ctx.log) ctx.log.push(event);
-}
+import { ENVIRONMENT, type Cell, type DamageKind, type HealSource, type Unit } from './types';
 
 const round2 = (v: number): number => Math.round(v * 100) / 100;
 
@@ -111,14 +75,15 @@ function dealDamage(
 
 const defReduction = (atk: number, def: number): number => Math.max(1, (atk * 100) / (100 + def));
 
-function spawnMonsters(ctx: RaidContext, rs: RoomState, scaling: ScalingContext): void {
+function spawnMonsters(
+  ctx: RaidContext,
+  rs: RoomState,
+  scaling: ScalingContext,
+  specs: readonly SpawnSpec[],
+  drops: readonly (DropSpec[] | undefined)[],
+): void {
   const { data, rng, board } = ctx;
   const hero = ctx.hero;
-  const specs = rs.room.spawns.map((s) => ({ ...s }));
-  for (let i = 0; i < rs.mods.extraMonsters && specs.length > 0; i++) {
-    const copy = specs[rng.int(0, specs.length - 1)];
-    if (copy) specs.push({ ...copy });
-  }
   const candidates: Cell[] = [];
   for (let min = 3; candidates.length < specs.length + 1 && min >= 0; min--) {
     candidates.length = 0;
@@ -151,11 +116,14 @@ function spawnMonsters(ctx: RaidContext, rs: RoomState, scaling: ScalingContext)
       maxHp: unit.maxHp,
     });
   };
-  for (const spec of specs) {
+  specs.forEach((spec, i) => {
     const def = data.monsters[spec.monsterId];
     if (!def) throw new Error(`Unknown monster: ${spec.monsterId}`);
-    add(makeMonsterUnit(scaling, ctx.nextUnitId++, spec, def, take()), false);
-  }
+    const unit = makeMonsterUnit(scaling, ctx.nextUnitId++, spec, def, take());
+    const carried = drops[i];
+    if (carried && carried.length > 0) ctx.unitDrops[unit.id] = carried;
+    add(unit, false);
+  });
   if (rs.room.isBoss && rs.room.bossId) {
     const def = data.bosses[rs.room.bossId];
     if (!def) throw new Error(`Unknown boss: ${rs.room.bossId}`);
@@ -383,7 +351,7 @@ function processDeaths(ctx: RaidContext, rs: RoomState): void {
     const killer = ctx.lastHitBy[m.id] ?? 0;
     emit(ctx, { type: 'Death', tick: ctx.tick, unit: m.id, killer });
     if (killer === hero.id) ctx.kills++;
-    ctx.onMonsterDeath?.(m);
+    collectDrops(ctx, m);
     if (hero.alive && killer === hero.id && ctx.trait.kind === 'healOnKill') {
       heal(ctx, hero, hero.maxHp * ctx.trait.value, 'kill');
     }
@@ -397,6 +365,8 @@ export function fightRoom(
   type: RoomTypeDef,
   mods: RoomMods,
   entry: Cell,
+  specs: readonly SpawnSpec[],
+  drops: readonly (DropSpec[] | undefined)[],
 ): RoomOutcome {
   const hero = ctx.hero;
   hero.x = entry.x;
@@ -409,13 +379,13 @@ export function fightRoom(
 
   const rs: RoomState = { room, type, mods, monsters: [], firstAttackDone: false };
   const scaling: ScalingContext = { data: ctx.data, levelMult: ctx.levelMult, mods };
-  spawnMonsters(ctx, rs, scaling);
+  spawnMonsters(ctx, rs, scaling, specs, drops);
   applyRoomEffects(ctx, type.onEnter);
 
   const cleared = (): boolean => rs.monsters.every((m) => !m.alive);
   const finishRoom = (): RoomOutcome => {
     emit(ctx, { type: 'RoomCleared', tick: ctx.tick, roomKey: `${room.pos.x},${room.pos.y}` });
-    ctx.onRoomCleared?.(room, type);
+    grantClearRewards(ctx, type, mods);
     if (mods.healOnClearPct > 0) heal(ctx, hero, hero.maxHp * mods.healOnClearPct, 'fountain');
     return 'cleared';
   };
