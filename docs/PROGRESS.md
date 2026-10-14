@@ -34,9 +34,29 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 - Proponowany następny krok: M2 (statystyki bohatera, artefakty, scalanie).
 
 ## Raport M2: Bohater, statystyki, artefakty
+
 - Zrobione: `computeStats` (kolejność (base+flat)×(1+add)×mult, clampy), `diffStats`, `levelMult` i `scaledModifiers` (flat/percentAdd ×lm, percentMult 1+(v−1)×lm), `activeEffects` (efekty per egzemplarz ze skalowaniem value), `computeHeroStats`, `grantArtifact`, `equip` (zamiana przy zajętym slocie)/`unequip` (tylko Prep, 9 slotów), `mergeArtifacts` (3→1, max poz. 3, tylko plecak), `backpackStacks`. UI: plecak ze stosami, 9 slotów, panel statystyk z różnicą przed/po (zielone/czerwone), przycisk Scal, dodawanie artefaktu w overlayu.
 - Wynik pnpm check: typecheck OK / lint OK / testy: 84 w 12 plikach.
 - Decyzje podjęte samodzielnie: clampy statystyk (critChance 0..1, aspd/moveSpeed ≥0.1, maxHp ≥1, range ≥1); scalanie bierze pierwsze 3 sztuki z plecaka; zakładanie na zajęty slot zamienia artefakty.
 - Znane problemy / dług: drag & drop dopiero w M6b (na razie klik: wybierz stos, potem slot).
 - Jak to zobaczyć/uruchomić: pnpm dev, wybierz klasę i kafelek, w overlayu „Dodaj artefakt”.
 - Proponowany następny krok: M3 (symulacja walki).
+
+## Plan M3
+
+1. combat/types.ts: zdarzenia logu, jednostki, wynik rajdu.
+2. combat/board.ts: komórki drzwi, Czebyszew, A* (8 kierunków), odwrót łucznika.
+3. combat/units.ts: skalowanie statystyk potworów/bossa z poziomu lochu, modyfikatory ulepszeń pokoju.
+4. combat/fight.ts: pętla tików pokoju (cele, ruch, ataki, krytyk/accuracy, efekty artefaktów, AoE maga, odbicie, faza bossa, śmierci na końcu tiku, efekty onEnter/onClear).
+5. combat/raid.ts: `simulateRaid` (trasa, tranzyty przez oczyszczone pokoje, limit 6000 tików, timeout = RaidLost), hash logu.
+6. Testy: zasięg, cooldown, ruch, krytyk, AoE, lifesteal, reflect, execute, firstStrike, nth, faza bossa, pułapka/sanktuarium, determinizm, 1000 rajdów bez timeoutu.
+7. tools/simulate.ts (CLI z logiem), strona /dev/raid w Pixi (M3.9) + screenshot Playwright.
+
+## Raport M3: Symulacja walki
+
+- Zrobione: combat/{types,board,units,fight,raid}.ts: plansza 9×7, A* (8 kierunków), tik 20 Hz, wybór celu (najbliższy, remis niższe id, retarget co 10 tików), ruch i cooldowny z `round(20/x)`, accuracy→krytyk (stała kolejność rzutów), obrażenia z defem, efekty artefaktów (nth, lifesteal, reflect, execute, firstStrike, per egzemplarz), AoE Maga, leczenie Wojownika, łucznik z dystansem, boss z fazą (2 szkielety, aspd ×1.3), efekty pokoi onEnter (pułapka nie zabija, sanktuarium), ulepszenia pokoi wpływające na walkę (torches, fog, webs, gate HP, altar, ambush, fountain), trasa z tranzytem przez oczyszczone pokoje, limit 6000 tików (timeout=RaidLost), log zdarzeń, `hashRaidLog`. `tools/simulate.ts` (CLI), strona dev `/dev/raid` w Pixi z prędkościami 1×/2×/4× i „Pomiń” (silnik odtwarzania `playback.ts` jest czysty i przetestowany), test Playwright ze zrzutami `artifacts/screens/dev-raid-*.png`.
+- Wynik pnpm check: typecheck OK / lint OK / testy: 123 w 14 plikach (w tym 1000 rajdów na losowych lochach: 0 timeoutów, determinizm hash logu, mechaniki). pnpm e2e: 1 test OK. pnpm build OK.
+- Decyzje podjęte samodzielnie: patrz DECISIONS.md (M3).
+- Znane problemy / dług: balans niedostrojony (bohater bez artefaktów przegrywa z 3 szkieletami na poz. 1), strojenie w M7; efekty pokoi dotyczące lootu (Skarbiec, Pułapka onClear, Kowadło, Brama) i dropy w M4.
+- Jak to zobaczyć/uruchomić: pnpm sim:raid -- --seed 123 --class mage --waves 3; pnpm dev i http://localhost:5173/dev/raid.
+- Proponowany następny krok: M4 (loot i ulepszenia pokoi).

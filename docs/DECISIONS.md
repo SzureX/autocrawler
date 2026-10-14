@@ -17,3 +17,10 @@ Format: data, decyzja, powód.
 - 2026-10-14 (M1): Pokój nr 1 ma losowany skład potworów jak Komnata poziomu 1 (aktualizacja wpisu z M0). Powód: pierwszy rajd ma realną walkę.
 - 2026-10-14 (M2): Clampy statystyk w `computeStats`: critChance 0..1, aspd i moveSpeed ≥ 0.1, maxHp ≥ 1, critMult ≥ 1, range ≥ 1, atk/def/accuracy ≥ 0. Powód: ochrona przed degeneracją, spec nie podaje limitów.
 - 2026-10-14 (M2): Zakładanie artefaktu na zajęty slot zamienia go z plecakiem; scalanie zużywa pierwsze 3 pasujące egzemplarze w kolejności plecaka. Powód: najprostsze zachowanie.
+- 2026-10-14 (M3): Plansza nie ma statycznych przeszkód, więc reguła „bez przecinania rogów” jest pusta; jednostki blokują komórki, ale nie rogi. A* używa heurystyki max(0, Czebyszew − zasięg).
+- 2026-10-14 (M3): Potwory pojawiają się w losowych komórkach o odległości Czebyszewa ≥ 3 od bohatera (strumień `combat`); bohater w pokoju nr 1 startuje przy drzwiach S, w kolejnych przy drzwiach przeciwnych do kierunku wejścia; boss stoi na środku planszy.
+- 2026-10-14 (M3): Jednostka z HP ≤ 0, która nie została jeszcze usunięta (koniec tiku), nadal wykonuje akcję w tym tiku (umożliwia obustronne zabójstwa); nie można jednak zacząć ataku na cel z HP ≤ 0.
+- 2026-10-14 (M3): Zawsze zużywane są 2 rzuty na atak (accuracy, krytyk). Bonusy efektów artefaktów (nth, execute, firstStrike) sumują się addytywnie do mnożnika obrażeń przed redukcją przez DEF; krytyk mnoży wynik. Lifesteal liczy się od faktycznie zadanych obrażeń (bez overkill), także od AoE.
+- 2026-10-14 (M3): Łucznik cofa się tylko, gdy jest bliżej niż 3 komórki i ma gdzie; w czasie odliczania kroku nie strzela, a przyparty do ściany strzela. Obrażenia i HP zaokrąglane do 0.01 (HP potworów do całości).
+- 2026-10-14 (M3): Przejście przez pokój (też oczyszczony) kosztuje (odległość Czebyszewa wejście→wyjście + 1) × ticksPerCell bohatera; `RoomEnter.duration` to czas marszu poprzedzający wejście. Limit 6000 tików obejmuje marsz.
+- 2026-10-14 (M3): Strona `/dev/raid` działa tylko w trybie DEV (ścieżka, nie hash).

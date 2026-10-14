@@ -13,3 +13,8 @@ export * from './serialize';
 export * from './stats';
 export * from './artifacts';
 export * from './inventory';
+export * from './combat/types';
+export * from './combat/board';
+export { simulateRaid, hashRaidLog, type SimulateOptions } from './combat/raid';
+export { roomMods, type RoomMods } from './combat/units';
+export * from './autobuild';

@@ -1,10 +1,18 @@
 import { loadGameData, type GameData } from '@loch/data';
 import { legalPlacements, placeTile } from './dungeon';
+import type { RaidEvent } from './combat/types';
 import { gridKey } from './grid';
 import { createRng } from './rng';
 import { createRun } from './run';
 import { chooseTile, generateTileOffer } from './tiles';
-import type { Dir, DungeonState, RoomInstance, RunState } from './types';
+import type {
+  ArtifactInstance,
+  Dir,
+  DungeonState,
+  RoomInstance,
+  RunState,
+  SpawnSpec,
+} from './types';
 
 /** Shared game data for tests. */
 export const testData: GameData = loadGameData();
@@ -47,4 +55,114 @@ export function randomBuild(seed: number, waves: number): RunState[] {
     offers.push(run);
   }
   return offers;
+}
+
+/** Deep copy of the shared game data, optionally tweaked (for mechanic tests). */
+export function cloneData(mutate?: (d: GameData) => void): GameData {
+  const copy = JSON.parse(JSON.stringify(testData)) as GameData;
+  mutate?.(copy);
+  return copy;
+}
+
+export interface RoomSpec {
+  x: number;
+  y: number;
+  doors?: Dir[];
+  roomTypeId?: string;
+  spawns?: SpawnSpec[];
+  upgradeId?: string | null;
+  bossId?: string;
+}
+
+export interface ScenarioOptions {
+  data?: GameData;
+  classId?: string;
+  seed?: number;
+  wavesWon?: number;
+  /** First room is the start room. Defaults to one chamber with a single rat. */
+  rooms?: RoomSpec[];
+  equipment?: ({ id: string; level?: 1 | 2 | 3 } | string)[];
+}
+
+/** A Prep-phase run with a hand-made dungeon and equipment. */
+export function scenario(opts: ScenarioOptions = {}): { data: GameData; run: RunState } {
+  const data = opts.data ?? testData;
+  const base = createRun(data, opts.seed ?? 1, opts.classId ?? 'warrior');
+  const specs = opts.rooms ?? [{ x: 4, y: 4, spawns: [{ monsterId: 'rat', elite: false }] }];
+  const rooms: Record<string, RoomInstance> = {};
+  specs.forEach((s, i) => {
+    rooms[gridKey(s.x, s.y)] = {
+      uid: `s-${i}`,
+      roomTypeId: s.bossId ? 'boss_room' : (s.roomTypeId ?? 'chamber'),
+      doors: s.doors ?? ['N', 'E', 'S', 'W'],
+      spawns: s.spawns ?? [],
+      isBoss: s.bossId !== undefined,
+      ...(s.bossId !== undefined ? { bossId: s.bossId } : {}),
+      pos: { x: s.x, y: s.y },
+      order: i,
+      upgradeId: s.upgradeId ?? null,
+    };
+  });
+  const first = specs[0];
+  if (!first) throw new Error('no rooms');
+  const equipped: (ArtifactInstance | null)[] = Array.from({ length: 9 }, () => null);
+  (opts.equipment ?? []).forEach((e, i) => {
+    const spec =
+      typeof e === 'string' ? { id: e, level: 1 as const } : { id: e.id, level: e.level ?? 1 };
+    equipped[i] = { uid: `e-${i}`, artifactId: spec.id, level: spec.level };
+  });
+  return {
+    data,
+    run: {
+      ...base,
+      phase: 'Prep',
+      wavesWon: opts.wavesWon ?? 0,
+      tileOffer: [],
+      dungeon: { rooms, startKey: gridKey(first.x, first.y) },
+      equipped,
+    },
+  };
+}
+
+export interface ReplayState {
+  pos: Record<number, { x: number; y: number }>;
+  hp: Record<number, number>;
+  maxHp: Record<number, number>;
+  monsterId: Record<number, string>;
+}
+
+/** Replays a raid log; `visit` sees every event together with the state just BEFORE it. */
+export function replay(
+  log: readonly RaidEvent[],
+  visit: (event: RaidEvent, state: ReplayState) => void,
+): ReplayState {
+  const state: ReplayState = { pos: {}, hp: {}, maxHp: {}, monsterId: {} };
+  for (const e of log) {
+    visit(e, state);
+    switch (e.type) {
+      case 'RaidStart':
+        state.hp[0] = e.heroMaxHp;
+        state.maxHp[0] = e.heroMaxHp;
+        break;
+      case 'RoomEnter':
+        state.pos[0] = { ...e.entry };
+        break;
+      case 'Spawn':
+        state.pos[e.unit] = { x: e.x, y: e.y };
+        state.hp[e.unit] = e.hp;
+        state.maxHp[e.unit] = e.maxHp;
+        state.monsterId[e.unit] = e.monsterId;
+        break;
+      case 'Move':
+        state.pos[e.unit] = { ...e.to };
+        break;
+      case 'Damage':
+      case 'Heal':
+        state.hp[e.unit] = e.hp;
+        break;
+      default:
+        break;
+    }
+  }
+  return state;
 }

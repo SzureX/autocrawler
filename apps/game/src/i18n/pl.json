@@ -138,5 +138,14 @@
   "ui.inv.pickHint": "Kliknij artefakt w plecaku, potem slot. Kliknij założony artefakt, aby go zdjąć.",
   "ui.inv.stats": "Statystyki",
   "debug.addArtifact": "Dodaj artefakt",
-  "debug.artifactToAdd": "Artefakt do dodania"
+  "debug.artifactToAdd": "Artefakt do dodania",
+  "dev.raid.title": "Podgląd rajdu (dev)",
+  "dev.raid.rooms": "Pokoje",
+  "dev.raid.artifacts": "Artefakty",
+  "dev.raid.simulate": "Symuluj",
+  "dev.raid.skip": "Pomiń",
+  "dev.raid.tick": "tik {tick}",
+  "dev.raid.won": "Rajd wygrany",
+  "dev.raid.lost": "Rajd przegrany ({reason})",
+  "dev.raid.hash": "Hash logu: {hash}, zdarzeń: {events}"
 }
