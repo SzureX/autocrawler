@@ -1,0 +1,61 @@
+[
+  {
+    "id": "blood_altar",
+    "nameKey": "upgrade.blood_altar.name",
+    "descKey": "upgrade.blood_altar.desc",
+    "icon": "🩸",
+    "effects": [{ "kind": "extraMonster", "dropWeightBonus": 0.5 }]
+  },
+  {
+    "id": "fountain",
+    "nameKey": "upgrade.fountain.name",
+    "descKey": "upgrade.fountain.desc",
+    "icon": "💧",
+    "effects": [{ "kind": "healOnClearPct", "value": 0.2 }]
+  },
+  {
+    "id": "anvil",
+    "nameKey": "upgrade.anvil.name",
+    "descKey": "upgrade.anvil.desc",
+    "icon": "🔨",
+    "effects": [{ "kind": "artifactOnClear", "minRarity": "rare" }]
+  },
+  {
+    "id": "fog",
+    "nameKey": "upgrade.fog.name",
+    "descKey": "upgrade.fog.desc",
+    "icon": "🌫️",
+    "effects": [{ "kind": "accuracyMult", "value": 0.8 }]
+  },
+  {
+    "id": "torches",
+    "nameKey": "upgrade.torches.name",
+    "descKey": "upgrade.torches.desc",
+    "icon": "🔥",
+    "effects": [{ "kind": "heroAspdMult", "value": 1.15 }]
+  },
+  {
+    "id": "sticky_webs",
+    "nameKey": "upgrade.sticky_webs.name",
+    "descKey": "upgrade.sticky_webs.desc",
+    "icon": "🕸️",
+    "effects": [{ "kind": "monsterMoveSpeedMult", "value": 0.7 }]
+  },
+  {
+    "id": "guardian_gate",
+    "nameKey": "upgrade.guardian_gate.name",
+    "descKey": "upgrade.guardian_gate.desc",
+    "icon": "🚪",
+    "effects": [
+      { "kind": "monsterHpMult", "value": 1.25 },
+      { "kind": "artifactOnClear", "minRarity": "common" }
+    ]
+  },
+  {
+    "id": "ambush",
+    "nameKey": "upgrade.ambush.name",
+    "descKey": "upgrade.ambush.desc",
+    "icon": "🎯",
+    "effects": [{ "kind": "guaranteedFirstCrit" }]
+  }
+]
