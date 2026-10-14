@@ -81,3 +81,18 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 - Znane problemy / dług: brak testu e2e UI ulepszeń (M6); balans niedostrojony.
 - Jak to zobaczyć/uruchomić: pnpm dev, w overlayu dodaj ulepszenie, kliknij je w magazynie, potem pokój.
 - Proponowany następny krok: M5 (pełna pętla runu w sim).
+
+## Plan M5
+
+1. flow.ts: `startRaid` (Prep, pusta ręka → Action, raidAttempts++), `resolveRaid` (Action → Resolve: loot zostaje, wygrana wavesWon++, porażka lives--, lastRaid), `continueRun` (Resolve → TileOffer / Prep+boss / Prep / GameOver / Victory), `discardUnplaceableTile`, `playRaid`.
+2. bots.ts: boty random / greedy-atk / greedy-hp (wybór kafelka losowy, losowe legalne miejsce, ekwipunek wg heurystyki, scalanie, losowe ulepszenia) + `playRun`.
+3. Testy: niedozwolone przejścia, wygrany i przegrany run sterowany botem przez wszystkie stany, brak kafelka po porażce, boss na końcu trasy i postawiony przez gracza, zapis/wczytanie między fazami, determinizm całego runu.
+
+## Raport M5: Run i progresja
+
+- Zrobione: flow.ts (`startRaid`, `resolveRaid`, `continueRun`, `discardUnplaceableTile`, `playRaid`), bots.ts (boty random/greedy-atk/greedy-hp, `playRun`), pełna maszyna stanów z 6.1: wygrana → TileOffer, 10. wygrana → oferta bossa z automatycznym wyborem jedynego bossa → Prep, porażka → Prep bez kafelka (loot zostaje), 0 żyć → GameOver, pokonanie bossa → Victory (wavesWon zostaje 10).
+- Wynik pnpm check: typecheck OK / lint OK / testy: 162 w 16 plikach (wygrany run 11 rajdów przez wszystkie fazy, przegrany run, niedozwolone przejścia, zapis/wczytanie po każdym kroku, determinizm całego runu, 120 runów botów bez Stuck/timeoutu).
+- Decyzje podjęte samodzielnie: patrz DECISIONS.md (M5).
+- Znane problemy / dług: UI nie jest jeszcze podpięte pod Start/Action/Resolve (M6c); boty zostaną zamrożone na początku M7.
+- Jak to zobaczyć/uruchomić: pnpm test (flow.test.ts).
+- Proponowany następny krok: M6a–d (UI).
