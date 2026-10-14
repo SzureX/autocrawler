@@ -1,18 +1,11 @@
 import type { GameData } from '@loch/data';
+import { gridKey } from './grid';
+import { generateTileOffer, createStartTile } from './tiles';
 import { EQUIP_SLOTS, type RoomInstance, type RunState } from './types';
-
-export function gridKey(x: number, y: number): string {
-  return `${x},${y}`;
-}
-
-/** Mints a unique id and returns the updated counter. */
-export function mintUid(run: RunState, prefix: string): { uid: string; run: RunState } {
-  return { uid: `${prefix}-${run.nextUid}`, run: { ...run, nextUid: run.nextUid + 1 } };
-}
 
 /**
  * Creates a fresh run: the chosen class, starting room #1 (a chamber with all four
- * doors) in the middle of the grid. The first tile offer is generated in M1.
+ * doors) in the middle of the grid, and the first tile offer.
  */
 export function createRun(data: GameData, seed: number, classId: string): RunState {
   if (!(classId in data.classes)) throw new Error(`Unknown class: ${classId}`);
@@ -20,16 +13,12 @@ export function createRun(data: GameData, seed: number, classId: string): RunSta
   const cy = Math.floor(data.balance.grid.height / 2);
   const startKey = gridKey(cx, cy);
   const start: RoomInstance = {
-    uid: 'tile-0',
-    roomTypeId: 'chamber',
-    doors: ['N', 'E', 'S', 'W'],
-    spawns: [],
-    isBoss: false,
+    ...createStartTile(data, seed >>> 0),
     pos: { x: cx, y: cy },
     order: 0,
     upgradeId: null,
   };
-  return {
+  const run: RunState = {
     saveVersion: data.meta.saveVersion,
     seed: seed >>> 0,
     classId,
@@ -47,4 +36,5 @@ export function createRun(data: GameData, seed: number, classId: string): RunSta
     stats: { raids: 0, wins: 0, losses: 0, merges: 0, artifactsFound: 0 },
     nextUid: 1,
   };
+  return generateTileOffer(data, run);
 }

@@ -24,6 +24,7 @@ export function DebugOverlay() {
   const startRun = useGameStore((s) => s.startRun);
   const debugSetPhase = useGameStore((s) => s.debugSetPhase);
   const resetRun = useGameStore((s) => s.resetRun);
+  const debugNextWave = useGameStore((s) => s.debugNextWave);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -72,6 +73,9 @@ export function DebugOverlay() {
             </button>
           ))}
           <div style={{ marginTop: 6 }}>
+            <button onClick={debugNextWave} data-testid="debug-next-wave">
+              {t('debug.nextWave')}
+            </button>
             <button onClick={exportRun}>{t('debug.export')}</button>
             <button onClick={resetRun}>{t('debug.clearSave')}</button>
           </div>
