@@ -33,6 +33,7 @@ export function resolveRaid(run: RunState, result: RaidResult): RunState {
     lootArtifacts: result.lootArtifacts,
     lootUpgrades: result.lootUpgrades,
     livesLost: result.won ? 0 : 1,
+    killer: result.death?.killerMonsterId ?? null,
   };
   const stats = {
     ...looted.stats,

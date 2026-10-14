@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { connectedNeighbors, countRegularRooms, legalPlacements, placeTile } from './dungeon';
 import { createRun } from './run';
+import { computeRaidRoute } from './route';
 import { chooseTile } from './tiles';
 import { makeDungeon, testData } from './testing';
 import type { Dir } from './types';
@@ -116,5 +117,43 @@ describe('placeTile', () => {
     expect(() =>
       placeTile(testData, { ...base, phase: 'Action' }, tile.uid, { x: 4, y: 3 }),
     ).toThrow(/phase/);
+  });
+});
+
+describe('sealed dungeon (boss breakthrough)', () => {
+  // Two rooms whose doors only face each other: no open door anywhere.
+  const sealed = makeDungeon([
+    [4, 4, ['E']],
+    [5, 4, ['W']],
+  ]);
+  const bossDoors: Dir[] = ['N', 'E', 'S', 'W'];
+
+  it('a regular tile has no legal placement there', () => {
+    expect(legal(sealed, bossDoors, false)).toEqual([]);
+  });
+
+  it('the boss may be built next to a regular room, which then gets a door', () => {
+    const spots = legal(sealed, bossDoors, true);
+    expect(spots.length).toBeGreaterThan(0);
+    expect(spots).toContain('4,3');
+    const tile = {
+      uid: 'boss-x',
+      roomTypeId: 'boss_room',
+      doors: bossDoors,
+      spawns: [],
+      isBoss: true,
+      bossId: 'warden',
+    };
+    const run = {
+      ...createRun(testData, 1, 'warrior'),
+      phase: 'Prep' as const,
+      dungeon: sealed,
+      hand: [tile],
+      wavesWon: 10,
+    };
+    const next = placeTile(testData, run, 'boss-x', { x: 4, y: 3 });
+    expect(next.dungeon.rooms['4,4']?.doors).toEqual(['N', 'E']);
+    expect(connectedNeighbors(next.dungeon, '4,3')).toEqual(['4,4']);
+    expect(computeRaidRoute(next.dungeon).stops).toEqual(['4,4', '5,4', '4,3']);
   });
 });

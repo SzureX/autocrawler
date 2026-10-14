@@ -10,7 +10,7 @@
       {
         "stat": "maxHp",
         "kind": "flat",
-        "value": 40
+        "value": 33.6
       }
     ],
     "effects": []
@@ -26,7 +26,7 @@
       {
         "stat": "def",
         "kind": "flat",
-        "value": 6
+        "value": 5.04
       }
     ],
     "effects": []
@@ -90,7 +90,7 @@
       {
         "stat": "maxHp",
         "kind": "percentAdd",
-        "value": 0.3
+        "value": 0.252
       }
     ],
     "effects": []
@@ -138,12 +138,12 @@
       {
         "stat": "def",
         "kind": "flat",
-        "value": 12
+        "value": 10.08
       },
       {
         "stat": "maxHp",
         "kind": "percentAdd",
-        "value": 0.2
+        "value": 0.168
       }
     ],
     "effects": []
@@ -196,7 +196,7 @@
     "effects": [
       {
         "type": "lifesteal",
-        "value": 0.1
+        "value": 0.05
       }
     ]
   },
@@ -211,7 +211,7 @@
     "effects": [
       {
         "type": "reflect",
-        "value": 0.3
+        "value": 0.252
       }
     ]
   },

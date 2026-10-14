@@ -1,4 +1,7 @@
+/// <reference types="node" />
 import { expect, test } from '@playwright/test';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { buildHand, shot, startAndBuild, trackErrors } from './helpers';
 
 test('room tooltip shows type, monsters and upgrade', async ({ page }) => {
@@ -21,14 +24,20 @@ test('equipping shows a before/after diff, drag and drop works like clicking', a
   await page.getByTestId('debug-artifact-select').selectOption('sharp_dagger');
   await page.getByTestId('debug-add-artifact').click();
   const atkBefore = Number(await page.getByTestId('stat-atk').innerText());
+  // The dagger bonus comes from the balance data, so the test follows any tuning.
+  const artifacts = JSON.parse(
+    readFileSync(join(process.cwd(), '../../packages/data/src/json/artifacts.json'), 'utf8'),
+  ) as { id: string; modifiers: { value: number }[] }[];
+  const delta = artifacts.find((a) => a.id === 'sharp_dagger')?.modifiers[0]?.value ?? 0;
+  const fmt = (v: number): string => (Number.isInteger(v) ? String(v) : v.toFixed(2));
 
   // Click flow: select the stack, hover the slot -> diff, click -> equipped.
   await page.getByTestId('stack-sharp_dagger-1').click();
   await page.getByTestId('slot-0').hover();
-  await expect(page.getByTestId('diff-atk')).toContainText(String(atkBefore + 3));
+  await expect(page.getByTestId('diff-atk')).toContainText(fmt(atkBefore + delta));
   await shot(page, 'm6b-diff-panel');
   await page.getByTestId('slot-0').click();
-  await expect(page.getByTestId('stat-atk')).toHaveText(String(atkBefore + 3));
+  await expect(page.getByTestId('stat-atk')).toHaveText(fmt(atkBefore + delta));
 
   // Drag flow: a second dagger dragged to slot 1.
   await page.getByTestId('debug-add-artifact').click();
@@ -41,7 +50,7 @@ test('equipping shows a before/after diff, drag and drop works like clicking', a
   await page.mouse.move(dst.x + dst.width / 2, dst.y + dst.height / 2, { steps: 15 });
   await page.mouse.up();
   await page.waitForTimeout(150); // dnd-kit swallows the click that follows a drag
-  await expect(page.getByTestId('stat-atk')).toHaveText(String(atkBefore + 6));
+  await expect(page.getByTestId('stat-atk')).toHaveText(fmt(atkBefore + 2 * delta));
 
   // Upgrade by drag to the start room, then the threat badge is visible.
   await page.getByTestId('debug-add-upgrade-fountain').click();

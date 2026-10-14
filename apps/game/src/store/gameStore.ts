@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { loadGameData, type GameData } from '@loch/data';
 import {
+  discardUnplaceableTile,
   continueRun,
   resolveRaid,
   simulateRaid,
@@ -22,6 +23,7 @@ import {
   type RunPhase,
   type RunState,
 } from '@loch/sim';
+import { trackRunTransition } from '../telemetry/runEvents';
 import { LocalStorageSaveStore, type SaveStore } from '../save/SaveStore';
 
 export const gameData: GameData = loadGameData();
@@ -58,6 +60,8 @@ interface GameStore {
   /** Debug: counts a won raid and opens the next tile offer (the full flow arrives in M5). */
   debugNextWave: () => void;
   /** Prep -> Action. The raid itself is replayed by the view from the simulated log. */
+  /** Safety valve: drops a regular tile that has no legal position. */
+  discardTile: () => void;
   startRaid: () => void;
   /** Action -> Resolve: applies the (deterministic) raid result to the run. */
   finishRaid: () => void;
@@ -123,6 +127,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
         : { ...generateTileOffer(gameData, next), phase: 'TileOffer' },
     });
   },
+  discardTile: () => {
+    const { run } = get();
+    if (run) set({ run: discardUnplaceableTile(gameData, run) });
+  },
   startRaid: () => {
     const { run } = get();
     if (run) set({ run: startRaid(run) });
@@ -169,6 +177,7 @@ let lastSavedPhase: RunPhase | null = null;
 useGameStore.subscribe((state, prev) => {
   const run = state.run;
   if (run === prev.run) return;
+  trackRunTransition(prev.run, run);
   if (!run) {
     lastSavedPhase = null;
     return;

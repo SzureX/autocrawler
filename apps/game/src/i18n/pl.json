@@ -199,5 +199,8 @@
   "debug.winRaid": "Wygraj rajd",
   "debug.loseRaid": "Przegraj rajd",
   "debug.setWaves": "Ustaw falę",
-  "debug.tick": "Tik"
+  "debug.tick": "Tik",
+  "ui.prep.discard": "Odrzuć kafelek",
+  "debug.telemetry": "Eksport telemetrii (JSON)",
+  "debug.telemetryExported": "Skopiowano zdarzeń telemetrii: {n}."
 }

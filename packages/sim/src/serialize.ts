@@ -32,6 +32,7 @@ const raidSummarySchema = z.object({
   lootArtifacts: z.array(artifactInstanceSchema),
   lootUpgrades: z.array(z.string()),
   livesLost: z.number().int(),
+  killer: z.string().nullable().optional(),
 });
 
 export const runStateSchema = z.object({

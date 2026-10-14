@@ -49,7 +49,7 @@
     "minLevel": 1,
     "stats": {
       "maxHp": 24,
-      "atk": 4,
+      "atk": 3.2,
       "aspd": 0.9,
       "def": 1,
       "moveSpeed": 1.8,
@@ -68,7 +68,7 @@
     "chamberWeight": 15,
     "minLevel": 3,
     "stats": {
-      "maxHp": 88,
+      "maxHp": 80,
       "atk": 5.5,
       "aspd": 0.6,
       "def": 8,

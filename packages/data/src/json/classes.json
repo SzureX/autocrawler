@@ -5,17 +5,21 @@
     "descKey": "class.warrior.desc",
     "traitKey": "class.warrior.trait",
     "stats": {
-      "maxHp": 120,
-      "atk": 10,
-      "aspd": 1.0,
+      "maxHp": 156,
+      "atk": 17,
+      "aspd": 1,
       "def": 8,
       "moveSpeed": 2.5,
       "critChance": 0.05,
       "critMult": 1.5,
-      "accuracy": 1.0,
+      "accuracy": 1,
       "range": 1
     },
-    "trait": { "kind": "healOnKill", "value": 0.03, "radius": 0 }
+    "trait": {
+      "kind": "healOnKill",
+      "value": 0.02,
+      "radius": 0
+    }
   },
   {
     "id": "rogue",
@@ -23,17 +27,21 @@
     "descKey": "class.rogue.desc",
     "traitKey": "class.rogue.trait",
     "stats": {
-      "maxHp": 80,
-      "atk": 12,
+      "maxHp": 195,
+      "atk": 16,
       "aspd": 1.6,
-      "def": 3,
+      "def": 7,
       "moveSpeed": 2.5,
       "critChance": 0.2,
-      "critMult": 2.0,
-      "accuracy": 1.0,
+      "critMult": 2,
+      "accuracy": 1,
       "range": 1
     },
-    "trait": { "kind": "none", "value": 0, "radius": 0 }
+    "trait": {
+      "kind": "none",
+      "value": 0,
+      "radius": 0
+    }
   },
   {
     "id": "mage",
@@ -41,16 +49,20 @@
     "descKey": "class.mage.desc",
     "traitKey": "class.mage.trait",
     "stats": {
-      "maxHp": 70,
-      "atk": 16,
+      "maxHp": 135,
+      "atk": 20,
       "aspd": 0.8,
-      "def": 2,
+      "def": 8,
       "moveSpeed": 2.5,
       "critChance": 0.05,
       "critMult": 1.5,
-      "accuracy": 1.0,
+      "accuracy": 1,
       "range": 4
     },
-    "trait": { "kind": "aoe", "value": 0.6, "radius": 1 }
+    "trait": {
+      "kind": "aoe",
+      "value": 0.45,
+      "radius": 1
+    }
   }
 ]
