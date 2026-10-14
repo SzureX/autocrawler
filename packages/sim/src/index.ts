@@ -20,3 +20,5 @@ export { roomMods, type RoomMods } from './combat/units';
 export * from './autobuild';
 export * from './loot';
 export * from './upgrades';
+export * from './flow';
+export * from './bots';
