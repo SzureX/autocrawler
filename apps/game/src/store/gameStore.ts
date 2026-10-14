@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { loadGameData, type GameData } from '@loch/data';
 import {
+  assignUpgrade,
+  removeUpgrade,
   chooseTile,
   createRun,
   debugForcePhase,
@@ -33,6 +35,9 @@ interface GameStore {
   setRun: (run: RunState) => void;
   chooseTile: (tileUid: string) => void;
   placeTile: (tileUid: string, pos: Pos) => void;
+  assignUpgrade: (roomKey: string, upgradeId: string) => void;
+  removeUpgrade: (roomKey: string) => void;
+  debugAddUpgrade: (upgradeId: string) => void;
   equipArtifact: (artifactUid: string, slot: number) => void;
   unequipSlot: (slot: number) => void;
   mergeStack: (artifactId: string, level: 1 | 2 | 3) => void;
@@ -54,6 +59,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
   placeTile: (tileUid, pos) => {
     const { run } = get();
     if (run) set({ run: placeTile(gameData, run, tileUid, pos) });
+  },
+  assignUpgrade: (roomKey, upgradeId) => {
+    const { run } = get();
+    if (run) set({ run: assignUpgrade(gameData, run, roomKey, upgradeId) });
+  },
+  removeUpgrade: (roomKey) => {
+    const { run } = get();
+    if (run) set({ run: removeUpgrade(run, roomKey) });
+  },
+  debugAddUpgrade: (upgradeId) => {
+    const { run } = get();
+    if (run) set({ run: { ...run, upgradeStorage: [...run.upgradeStorage, upgradeId] } });
   },
   equipArtifact: (artifactUid, slot) => {
     const { run } = get();

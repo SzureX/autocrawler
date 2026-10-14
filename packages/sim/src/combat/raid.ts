@@ -6,7 +6,9 @@ import { createRng, hashString } from '../rng';
 import { computeRaidRoute } from '../route';
 import type { Dir, RunState } from '../types';
 import { cheb, doorCell } from './board';
-import { emit, fightRoom, type RaidContext } from './fight';
+import { emit, type RaidContext } from './context';
+import { fightRoom } from './fight';
+import { planRaid } from './plan';
 import { ticksPerCellFor, makeHeroUnit, roomMods } from './units';
 import type { Cell, RaidEndReason, RaidResult } from './types';
 
@@ -53,10 +55,12 @@ export function simulateRaid(
   const ctx: RaidContext = {
     data,
     rng,
+    rewardRng: createRng(run.seed).fork('rewards', attempt),
     log: options.recordLog === false ? null : [],
     tick: 0,
     tickLimit: combat.tickLimit,
     nextUnitId: 1,
+    level,
     board: combat.board,
     hero,
     heroBase: { aspd: heroStats.aspd, accuracy: heroStats.accuracy },
@@ -67,9 +71,10 @@ export function simulateRaid(
     kills: 0,
     lastHitBy: {},
     names: {},
-    onMonsterDeath: null,
-    onRoomCleared: null,
+    unitDrops: {},
+    loot: { artifacts: [], upgrades: [], nextUid: run.nextUid },
   };
+  const plans = planRaid(data, run, attempt, route, level);
 
   emit(ctx, {
     type: 'RaidStart',
@@ -152,7 +157,16 @@ export function simulateRaid(
     enterRoom(stopKey, entry, false, null, travelled, from);
 
     const mods = roomMods(room.upgradeId ? data.roomUpgrades[room.upgradeId] : undefined);
-    const outcome = fightRoom(ctx, room, type, mods, entry);
+    const plan = plans[stopKey];
+    const outcome = fightRoom(
+      ctx,
+      room,
+      type,
+      mods,
+      entry,
+      plan?.specs ?? room.spawns,
+      plan?.drops ?? [],
+    );
     if (outcome === 'cleared') {
       roomsCleared++;
       continue;
@@ -181,7 +195,7 @@ export function simulateRaid(
     heroHp: hero.hp,
     heroMaxHp: hero.maxHp,
     death,
-    lootArtifacts: [],
-    lootUpgrades: [],
+    lootArtifacts: ctx.loot.artifacts,
+    lootUpgrades: ctx.loot.upgrades,
   };
 }

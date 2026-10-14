@@ -26,6 +26,7 @@ export function DebugOverlay() {
   const resetRun = useGameStore((s) => s.resetRun);
   const debugNextWave = useGameStore((s) => s.debugNextWave);
   const debugAddArtifact = useGameStore((s) => s.debugAddArtifact);
+  const debugAddUpgrade = useGameStore((s) => s.debugAddUpgrade);
   const [artifactToAdd, setArtifactToAdd] = useState('iron_helm');
 
   useEffect(() => {
@@ -94,6 +95,18 @@ export function DebugOverlay() {
               >
                 {t('debug.addArtifact')}
               </button>
+            </div>
+            <div>
+              {Object.values(gameData.roomUpgrades).map((u) => (
+                <button
+                  key={u.id}
+                  onClick={() => debugAddUpgrade(u.id)}
+                  title={t('debug.addUpgrade')}
+                  data-testid={`debug-add-upgrade-${u.id}`}
+                >
+                  {u.icon}
+                </button>
+              ))}
             </div>
             <button onClick={debugNextWave} data-testid="debug-next-wave">
               {t('debug.nextWave')}

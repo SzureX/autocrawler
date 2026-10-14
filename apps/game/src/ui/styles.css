@@ -221,3 +221,9 @@ button.active {
   display: block;
   border: 1px solid #3a4152;
 }
+.cell-upgrade {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 14px;
+}

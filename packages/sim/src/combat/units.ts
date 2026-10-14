@@ -1,4 +1,4 @@
-import type { BossDef, GameData, MonsterDef, RoomUpgradeDef, StatBlock } from '@loch/data';
+import type { BossDef, GameData, MonsterDef, Rarity, RoomUpgradeDef, StatBlock } from '@loch/data';
 import type { SpawnSpec } from '../types';
 import type { Cell, Unit } from './types';
 
@@ -9,6 +9,10 @@ export interface RoomMods {
   monsterMoveSpeedMult: number;
   monsterHpMult: number;
   extraMonsters: number;
+  /** Multiplier of the drop weight of every monster in the room (Blood Altar). */
+  dropWeightMult: number;
+  /** Artifacts granted when the room is cleared; each entry is the minimum rarity. */
+  clearArtifacts: Rarity[];
   healOnClearPct: number;
   guaranteedFirstCrit: boolean;
 }
@@ -20,6 +24,8 @@ export function roomMods(upgrade: RoomUpgradeDef | undefined): RoomMods {
     monsterMoveSpeedMult: 1,
     monsterHpMult: 1,
     extraMonsters: 0,
+    dropWeightMult: 1,
+    clearArtifacts: [],
     healOnClearPct: 0,
     guaranteedFirstCrit: false,
   };
@@ -40,6 +46,7 @@ export function roomMods(upgrade: RoomUpgradeDef | undefined): RoomMods {
         break;
       case 'extraMonster':
         mods.extraMonsters += 1;
+        mods.dropWeightMult *= 1 + e.dropWeightBonus;
         break;
       case 'healOnClearPct':
         mods.healOnClearPct += e.value;
@@ -48,7 +55,8 @@ export function roomMods(upgrade: RoomUpgradeDef | undefined): RoomMods {
         mods.guaranteedFirstCrit = true;
         break;
       case 'artifactOnClear':
-        break; // handled by the loot system
+        mods.clearArtifacts.push(e.minRarity);
+        break;
     }
   }
   return mods;

@@ -16,10 +16,14 @@ interface Props {
   /** Tile that would be built on click (first tile of the hand). */
   tile: RoomTile | undefined;
   onPlace: (pos: Pos) => void;
+  /** Upgrade picked from the storage: clicking a room assigns it. */
+  selectedUpgrade?: string | null;
+  /** Called when a built room is clicked (assign or remove its upgrade). */
+  onRoomClick?: (roomKey: string) => void;
 }
 
 /** 9x9 dungeon grid with legal-position highlighting and a ghost preview of the hand tile. */
-export function DungeonGrid({ run, tile, onPlace }: Props) {
+export function DungeonGrid({ run, tile, onPlace, selectedUpgrade, onRoomClick }: Props) {
   const { width, height } = gameData.balance.grid;
   const [hover, setHover] = useState<string | null>(null);
   const legal = useMemo(() => {
@@ -51,14 +55,19 @@ export function DungeonGrid({ run, tile, onPlace }: Props) {
           className={classes}
           data-testid={`cell-${key}`}
           data-legal={isLegal ? 'true' : 'false'}
-          disabled={!isLegal}
+          disabled={!isLegal && !(room && onRoomClick && (selectedUpgrade || room.upgradeId))}
           onMouseEnter={() => setHover(key)}
           onMouseLeave={() => setHover((h) => (h === key ? null : h))}
-          onClick={() => onPlace({ x, y })}
+          onClick={() => (room ? onRoomClick?.(key) : onPlace({ x, y }))}
           title={room ? undefined : isLegal ? t('ui.prep.placeHint') : undefined}
         >
           {type && <span className="cell-icon">{type.icon}</span>}
           {doors.length > 0 && <DoorIcon doors={doors} />}
+          {room?.upgradeId && (
+            <span className="cell-upgrade" data-testid={`upgrade-${key}`}>
+              {gameData.roomUpgrades[room.upgradeId]?.icon}
+            </span>
+          )}
           {room && room.spawns.length > 0 && (
             <span className="cell-spawns">
               <SpawnList tile={room} />

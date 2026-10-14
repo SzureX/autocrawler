@@ -147,5 +147,10 @@
   "dev.raid.tick": "tik {tick}",
   "dev.raid.won": "Rajd wygrany",
   "dev.raid.lost": "Rajd przegrany ({reason})",
-  "dev.raid.hash": "Hash logu: {hash}, zdarzeń: {events}"
+  "dev.raid.hash": "Hash logu: {hash}, zdarzeń: {events}",
+  "ui.upgrades.title": "Magazyn ulepszeń",
+  "ui.upgrades.empty": "Brak ulepszeń.",
+  "ui.upgrades.pickHint": "Kliknij ulepszenie, potem pokój. Kliknij pokój z ulepszeniem, aby je zdjąć.",
+  "ui.upgrades.assignHint": "Kliknij pokój, aby przypisać ulepszenie (zastąpione wraca do magazynu).",
+  "debug.addUpgrade": "Dodaj ulepszenie"
 }
