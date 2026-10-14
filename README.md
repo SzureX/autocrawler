@@ -31,5 +31,5 @@ W trybie DEV: `/dev/raid` (podgląd rajdu), `?seed=123` (powtarzalny run), overl
 
 - `packages/data`: dane JSON (balans tylko tutaj), schematy Zod, loader.
 - `packages/sim`: czysty TypeScript (RNG, loch, walka, loot, przebieg runu, boty). Żadnej logiki w UI.
-- `apps/game`: React (UI), Pixi (odtwarzanie rajdu z logu), Zustand, i18n (`pl.json`), `SaveStore`.
+- `apps/game`: React (UI), Three.js (odtwarzanie rajdu z logu w 3D), Zustand, i18n (`pl.json`), `SaveStore`.
 - `tools`: `simulate.ts`, `balance.ts`.

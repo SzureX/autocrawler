@@ -25,7 +25,7 @@ function lineText(l: LogLine): string {
   }
 }
 
-/** Action phase: replays the (already simulated) raid on the Pixi canvas. */
+/** Action phase: replays the (already simulated) raid on the Three.js canvas. */
 export function RaidScreen({ run }: { run: RunState }) {
   const finishRaid = useGameStore((s) => s.finishRaid);
   const host = useRef<HTMLDivElement>(null);
@@ -69,7 +69,7 @@ export function RaidScreen({ run }: { run: RunState }) {
             <div className="hp-bar" aria-label={t('raid.hp')}>
               <div className="hp-fill" style={{ width: `${frac * 100}%` }} />
               <span data-testid="raid-hp">
-                {t('raid.hp')} {Math.round(hud?.heroHp ?? 0)}/{hud?.heroMaxHp ?? 0}
+                {t('raid.hp')} {Math.round(hud?.heroHp ?? 0)}/{Math.round(hud?.heroMaxHp ?? 0)}
               </span>
             </div>
             <span data-testid="raid-room">

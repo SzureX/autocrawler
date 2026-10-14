@@ -17,10 +17,10 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 
 1. **Jeden milestone na raz** (sekcja 11). Nie zaczynaj następnego bez mojej zgody. Aktualny milestone jest oznaczony w sekcji 16.
 2. **Najpierw plan, potem kod.** Przed milestone'em napisz krótki plan (5–10 punktów), poczekaj na „ok” tylko jeśli plan odbiega od tego pliku.
-3. **Najpierw `packages/sim` z testami, potem UI.** Żadnej logiki gry w komponentach React ani w kodzie Pixi.
+3. **Najpierw `packages/sim` z testami, potem UI.** Żadnej logiki gry w komponentach React ani w kodzie widoku (Three.js).
 4. **Nigdy nie mów „gotowe”, jeśli nie uruchomiłeś `pnpm check`** i nie widziałeś, że przechodzi. Podaj w raporcie rzeczywisty wynik.
 5. **Nie naginaj testów, żeby przechodziły.** Test zmieniasz tylko wtedy, gdy jest błędny, i piszesz dlaczego.
-6. **Nowe zależności tylko po mojej akceptacji** (z uzasadnieniem). Zatwierdzone na start: `typescript`, `vite`, `@vitejs/plugin-react`, `react`, `react-dom`, `pixi.js`, `zustand`, `immer`, `zod`, `vitest`, `@playwright/test`, `@dnd-kit/core`, `eslint`, `prettier`, `tsx`.
+6. **Nowe zależności tylko po mojej akceptacji** (z uzasadnieniem). Zatwierdzone na start: `typescript`, `vite`, `@vitejs/plugin-react`, `react`, `react-dom`, `three`, `zustand`, `immer`, `zod`, `vitest`, `@playwright/test`, `@dnd-kit/core`, `eslint`, `prettier`, `tsx`.
 7. **Niejasność w specyfikacji:** wybierz najprostszą opcję zgodną z tym plikiem, zapisz ją w `docs/DECISIONS.md` (data, decyzja, powód) i wspomnij w raporcie. Pytaj tylko wtedy, gdy decyzja blokuje dalszą pracę lub zmienia zasady gry.
 8. **Zakres jest zamrożony** (sekcja 13). Nowe pomysły trafiają do `docs/BACKLOG.md`, a nie do kodu.
 9. **Weryfikacja wizualna UI:** rób screenshoty przez Playwright (`artifacts/screens/`) i oglądaj je. Do M6 nie poświęcaj czasu na estetykę: placeholdery, czytelność ponad ładność.
@@ -43,10 +43,10 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 
 ## 3. Twarde zasady techniczne
 
-1. **`packages/sim` to czysty TypeScript.** Zero importów z `react`, `pixi.js`, `zustand`, DOM, `window`, `document`, `localStorage`. W `tsconfig` pakietu `lib: ["ES2022"]` (bez DOM), a w ESLint `no-restricted-imports` dla powyższych.
+1. **`packages/sim` to czysty TypeScript.** Zero importów z `react`, `three`, `zustand`, DOM, `window`, `document`, `localStorage`. W `tsconfig` pakietu `lib: ["ES2022"]` (bez DOM), a w ESLint `no-restricted-imports` dla powyższych.
 2. **Zero `Math.random()` i `Date.now()` w `sim`** (reguła ESLint `no-restricted-properties`). Cała losowość pochodzi z seedowanego RNG (sekcja 6.8).
 3. **Cały `RunState` jest serializowalny do JSON.** Brak `Map`, `Set`, klas, funkcji w stanie. Używamy `Record<string, T>` i tablic.
-4. **Symulacja jest funkcją czystą.** `simulateRaid(run, raidSeed)` zwraca wynik i **log zdarzeń**. Widok (Pixi) tylko odtwarza log z interpolacją i nigdy nie liczy walki sam.
+4. **Symulacja jest funkcją czystą.** `simulateRaid(run, raidSeed)` zwraca wynik i **log zdarzeń**. Widok (Three.js) tylko odtwarza log z interpolacją i nigdy nie liczy walki sam.
 5. **Dane są w JSON** (`packages/data`), walidowane Zod przy starcie. Żadnych liczb balansowych wpisanych w kod.
 6. **TypeScript `strict`**, `noUncheckedIndexedAccess`. Zakaz `any` (użyj `unknown` + zawężanie). Zakaz `!` bez komentarza z uzasadnieniem.
 7. **Każdy system w `sim` ma testy Vitest** przed podpięciem UI. Test determinizmu (ten sam seed → identyczny log) jest obowiązkowy.
@@ -58,7 +58,7 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 
 ## 4. Stack, struktura i komendy
 
-**Stack:** TypeScript (strict), Vite, PixiJS (odtwarzanie walki), React (UI: menu, plecak, sloty, siatka lochu), Zustand (store UI, opakowuje `sim`), immer (niemutowalne aktualizacje `RunState`), Zod (walidacja danych), Vitest (testy), Playwright (e2e i screenshoty), dnd-kit (drag & drop). Menedżer pakietów: **pnpm** (workspaces). Node ≥ 20.
+**Stack:** TypeScript (strict), Vite, Three.js (odtwarzanie walki w 3D), React (UI: menu, plecak, sloty, siatka lochu), Zustand (store UI, opakowuje `sim`), immer (niemutowalne aktualizacje `RunState`), Zod (walidacja danych), Vitest (testy), Playwright (e2e i screenshoty), dnd-kit (drag & drop). Menedżer pakietów: **pnpm** (workspaces). Node ≥ 20.
 
 ```
 /
@@ -71,7 +71,7 @@ Język komunikacji ze mną: **polski**. Kod, identyfikatory, komentarze, commity
 │  │  └─ src/ + testy obok plików (*.test.ts)
 │  └─ data/         JSON + schematy Zod + loader (loadGameData)
 ├─ apps/
-│  └─ game/         Vite: React UI + Pixi view + store + i18n + save
+│  └─ game/         Vite: React UI + Three.js view + store + i18n + save
 │     └─ src/{ui,view,store,i18n,save,dev}
 └─ tools/
    ├─ balance.ts    headless runner N runów
@@ -340,7 +340,7 @@ Waga dropu w obrębie rzadkości: równa. Tagi (`tank`, `blade`, `swift`, `vampi
   1. **Wybór klasy**: 3 karty ze statystykami i cechą.
   2. **Oferta kafelków / bossa**: 3 kafelki z typem, drzwiami i listą potworów widoczną od razu.
   3. **Prep** (główny ekran): siatka lochu 9×9 (React/DOM) z podglądem „ducha” i podświetleniem legalnych pozycji, kafelek z `hand`, plecak (stosy z licznikiem), 9 slotów, magazyn ulepszeń, panel statystyk z różnicą przed/po (zielone/czerwone), przycisk „Scal”, przycisk Start. **Tooltip nad pokojem:** typ, potwory (ikony × liczba, elita oznaczona), ulepszenie.
-  4. **Rajd**: płótno Pixi (pokój z góry, kamera za bohaterem), HUD: HP, nazwa pokoju, przyciski 1×/2×/4×/Pomiń, krótki log zdarzeń.
+  4. **Rajd**: płótno Three.js (pokój w 3D, kamera podąża za bohaterem, placeholdery z brył), HUD: HP, nazwa pokoju, przyciski 1×/2×/4×/Pomiń, krótki log zdarzeń.
   5. **Podsumowanie rajdu**: wynik, lista lootu, utracone życie.
   6. **Victory / GameOver**: statystyki runu, przycisk „Nowy run”.
 - **Stały HUD:** 5 ikon żyć, „Fala X/10”, poziom lochu.

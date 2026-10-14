@@ -5,7 +5,7 @@ import { gameData } from '../store/gameStore';
 import type { PlaybackState } from '../view/playback';
 import { RaidCanvas } from '../view/RaidCanvas';
 
-/** DEV-only page (/dev/raid): simulates a raid and replays its log on the Pixi canvas. */
+/** DEV-only page (/dev/raid): simulates a raid and replays its log on the Three.js canvas. */
 export function DevRaidPage() {
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<RaidCanvas | null>(null);
@@ -108,7 +108,7 @@ export function DevRaidPage() {
       <div data-testid="raid-hud">
         {hud && (
           <span>
-            HP {Math.round(hud.heroHp)}/{hud.heroMaxHp} ·{' '}
+            HP {Math.round(hud.heroHp)}/{Math.round(hud.heroMaxHp)} ·{' '}
           </span>
         )}
         {hud && <span>{t('dev.raid.tick', { tick: Math.floor(hud.tick) })}</span>}
