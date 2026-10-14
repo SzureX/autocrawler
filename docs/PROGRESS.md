@@ -72,3 +72,12 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 ## Wznowienie po awarii (po części sim M4)
 
 - Zastano: gałąź m4-loot, tagi m0..m3-done, niezacommitowane pliki M4 (loot.ts, upgrades.ts, combat/{context,plan,rewards}.ts, loot.test.ts, zmiany fight/raid/units). Brak index.lock, node_modules sprawne. Wszystkie pliki kompletne; `pnpm check` zielony (149 testów). Nic nie naprawiano, tylko commit.
+
+## Raport M4: Loot i ulepszenia pokoi
+
+- Zrobione: loot.ts (rzadkość z wag poziomu, wybór wagą dropWeight, `planDrops`: 4–6 artefaktów i 1–2 ulepszeń, próbkowanie bez zwracania, maks. 1 na potwora), combat/plan.ts (finalne składy pokoi z Ołtarzem krwi + przypisanie dropów, wagi: elita ×3, mnożnik pokoju, Ołtarz +50%), combat/rewards.ts (`LootDropped` przy śmierci potwora, nagrody onClear: Skarbiec 50%, Pułapka +ulepszenie, Kowadło ≥rare, Brama dowolny), strumienie `drops`, `extra`, `rewards`, `combat` z `fork(label, attempt)`; `assignUpgrade`/`removeUpgrade` (wymiana wraca do magazynu), `applyRaidLoot`. UI: magazyn ulepszeń, przypisanie klikiem do pokoju, zdjęcie klikiem, ikona na pokoju, dodawanie ulepszeń w overlayu.
+- Wynik pnpm check: typecheck OK / lint OK / testy: 149 w 15 plikach (rozkład liczby i rzadkości dropów, wagi, zgon gubi dropy, ulepszenie zmienia przebieg, onClear, boss nie dropi, determinizm).
+- Decyzje podjęte samodzielnie: patrz DECISIONS.md (M4).
+- Znane problemy / dług: brak testu e2e UI ulepszeń (M6); balans niedostrojony.
+- Jak to zobaczyć/uruchomić: pnpm dev, w overlayu dodaj ulepszenie, kliknij je w magazynie, potem pokój.
+- Proponowany następny krok: M5 (pełna pętla runu w sim).

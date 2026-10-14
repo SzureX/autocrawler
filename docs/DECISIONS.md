@@ -24,3 +24,5 @@ Format: data, decyzja, powód.
 - 2026-10-14 (M3): Łucznik cofa się tylko, gdy jest bliżej niż 3 komórki i ma gdzie; w czasie odliczania kroku nie strzela, a przyparty do ściany strzela. Obrażenia i HP zaokrąglane do 0.01 (HP potworów do całości).
 - 2026-10-14 (M3): Przejście przez pokój (też oczyszczony) kosztuje (odległość Czebyszewa wejście→wyjście + 1) × ticksPerCell bohatera; `RoomEnter.duration` to czas marszu poprzedzający wejście. Limit 6000 tików obejmuje marsz.
 - 2026-10-14 (M3): Strona `/dev/raid` działa tylko w trybie DEV (ścieżka, nie hash).
+- 2026-10-14 (M4): Finalny skład pokoju (kopia od Ołtarza krwi) jest losowany przed rajdem ze strumienia `extra`, żeby pre-roll dropów znał wszystkie potwory. Dropy: ulepszenia losowane równomiernie spośród 8; artefakty zawsze poziomu 1; uid artefaktów nadawane od `run.nextUid` w kolejności upuszczenia.
+- 2026-10-14 (M4): Nagrody onClear losowane ze strumienia `rewards:<attempt>`, niezależnego od walki. Nagrody nie są przyznawane, gdy bohater ginie w pokoju. Ulepszenie można przypisać także do pokoju Bossa; zdjęcie ulepszenia (`removeUpgrade`) dodane dla wygody UI.
