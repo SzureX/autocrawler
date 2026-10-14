@@ -146,3 +146,7 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 - Niespełnione cele z sekcji 12: rozrzut klas dla greedy-hp (37,5 pkt proc., mag 17,6%), rajdy poz. 1–2 krótsze niż 15 s, artefakty na run 74–87 (cel 45–65), długość runu atk/random ok. 17 min (cel 20–35). Szczegóły w BALANCE.md i FINAL_REPORT.md.
 - Decyzje podjęte samodzielnie: patrz DECISIONS.md (M7).
 - Jak to zobaczyć/uruchomić: pnpm dev, pnpm balance -- --runs 10000 --bot all.
+
+## Przejście z Pixi na Three.js (wariant B, na życzenie właściciela)
+
+Plan: 1) zależność `three` (+ @types/three) zatwierdzona w rozmowie, `pixi.js` do usunięcia; 2) czyste moduły view/layout.ts (współrzędne, kamera, kierunek) z testami; 3) RaidCanvas na Three.js z tym samym API (init/load/setSpeed/skip/onState/destroy): pokój 3D z podłogą i ścianami, drzwi, światła i cienie, placeholdery brył per potwór, billboardy z emoji, paski HP, liczby obrażeń, błysk trafienia, kamera podążająca za bohaterem; 4) testy e2e i zrzuty; 5) aktualizacja CLAUDE.md/README/DECISIONS.

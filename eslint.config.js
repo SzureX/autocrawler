@@ -55,7 +55,10 @@ export default tseslint.config(
               group: ['react', 'react-dom', 'react/*', 'react-dom/*'],
               message: 'sim must not import UI code.',
             },
-            { group: ['pixi.js', 'pixi.js/*', '@pixi/*'], message: 'sim must not import Pixi.' },
+            {
+              group: ['pixi.js', 'pixi.js/*', '@pixi/*', 'three', 'three/*'],
+              message: 'sim must not import Pixi or Three.js.',
+            },
             { group: ['zustand', 'zustand/*'], message: 'sim must not import the UI store.' },
           ],
         },
