@@ -207,3 +207,17 @@ button.active {
 .diff-down {
   color: #ff7a7a;
 }
+.dev-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.dev-controls input {
+  width: 64px;
+}
+.raid-canvas canvas {
+  display: block;
+  border: 1px solid #3a4152;
+}
