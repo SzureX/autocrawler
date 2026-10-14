@@ -25,9 +25,18 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 8. UI minimalne: ekran klasy, oferta kafelków, siatka Prep z duchem i klikaniem.
 
 ## Raport M1: Siatka i budowanie
+
 - Zrobione: grid/level/uid, spawns (skład z seeda `spawns:<uid>`, minLevel brutala, tryby pokoi), dungeon (`legalPlacements`, `placementConnections`, `connectedNeighbors`, `placeTile`), tiles (generator z rerollem maski i fallbackiem 4 drzwi, oferta 3 kafelków o różnych typach, oferta bossa, `chooseTile`), `computeRaidRoute` (DFS preorder N,E,S,W, boss na końcu, ścieżki BFS bez przechodzenia przez bossa); `createRun` generuje spawns pokoju 1 i pierwszą ofertę. UI minimalne: ekran klasy, oferta kafelków z listą potworów, siatka Prep z duchem i podświetleniem legalnych pól, klik stawia kafelek.
 - Wynik pnpm check: typecheck OK / lint OK / testy: 52 w 9 plikach (m.in. 1000+ ofert bez soft locka, trasa na 50 układach, determinizm ofert, cykle, limit pokoi).
 - Decyzje podjęte samodzielnie: patrz DECISIONS.md (M1).
 - Znane problemy / dług: brak tooltipa nad pokojem (M6b); `debugNextWave` w overlayu zastępuje pełny przepływ do M5.
 - Jak to zobaczyć/uruchomić: pnpm dev, wybierz klasę, wybierz kafelek, kliknij zielone pole.
 - Proponowany następny krok: M2 (statystyki bohatera, artefakty, scalanie).
+
+## Raport M2: Bohater, statystyki, artefakty
+- Zrobione: `computeStats` (kolejność (base+flat)×(1+add)×mult, clampy), `diffStats`, `levelMult` i `scaledModifiers` (flat/percentAdd ×lm, percentMult 1+(v−1)×lm), `activeEffects` (efekty per egzemplarz ze skalowaniem value), `computeHeroStats`, `grantArtifact`, `equip` (zamiana przy zajętym slocie)/`unequip` (tylko Prep, 9 slotów), `mergeArtifacts` (3→1, max poz. 3, tylko plecak), `backpackStacks`. UI: plecak ze stosami, 9 slotów, panel statystyk z różnicą przed/po (zielone/czerwone), przycisk Scal, dodawanie artefaktu w overlayu.
+- Wynik pnpm check: typecheck OK / lint OK / testy: 84 w 12 plikach.
+- Decyzje podjęte samodzielnie: clampy statystyk (critChance 0..1, aspd/moveSpeed ≥0.1, maxHp ≥1, range ≥1); scalanie bierze pierwsze 3 sztuki z plecaka; zakładanie na zajęty slot zamienia artefakty.
+- Znane problemy / dług: drag & drop dopiero w M6b (na razie klik: wybierz stos, potem slot).
+- Jak to zobaczyć/uruchomić: pnpm dev, wybierz klasę i kafelek, w overlayu „Dodaj artefakt”.
+- Proponowany następny krok: M3 (symulacja walki).

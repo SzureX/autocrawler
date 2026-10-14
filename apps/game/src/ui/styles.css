@@ -145,3 +145,65 @@ button:disabled {
 .side {
   width: 300px;
 }
+.inventory {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 340px;
+}
+.slot-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+.slot {
+  min-height: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #1b1e27;
+  border: 1px dashed #4a5268;
+  font-size: 12px;
+}
+.slot.filled {
+  background: #2c3550;
+  border-style: solid;
+}
+.stack-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+.stack.selected {
+  outline: 2px solid #f2c14e;
+}
+.stack.mergeable {
+  outline: 2px solid #4caf70;
+}
+button.active {
+  background: #4caf70;
+}
+.hint {
+  color: #9aa6bf;
+  font-size: 12px;
+  margin: 4px 0;
+}
+.stats-panel table {
+  font-size: 13px;
+  border-collapse: collapse;
+}
+.stats-panel td {
+  padding: 1px 8px 1px 0;
+}
+.diff-up {
+  color: #5fd38a;
+}
+.diff-down {
+  color: #ff7a7a;
+}

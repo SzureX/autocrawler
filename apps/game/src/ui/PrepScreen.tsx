@@ -2,6 +2,7 @@ import { legalPlacements, type RunState } from '@loch/sim';
 import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
 import { DungeonGrid } from './DungeonGrid';
+import { InventoryPanel } from './InventoryPanel';
 import { TileView } from './TileView';
 
 export function PrepScreen({ run }: { run: RunState }) {
@@ -22,6 +23,7 @@ export function PrepScreen({ run }: { run: RunState }) {
           </button>
           {run.hand.length > 0 && <p>{t('ui.prep.startBlocked')}</p>}
         </aside>
+        <InventoryPanel run={run} />
       </div>
     </section>
   );

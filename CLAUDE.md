@@ -458,8 +458,8 @@ Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby da�
 
 - [x] M0: Fundament (tag m0-done)
 - [x] M1: Siatka i budowanie (tag m1-done)
-- [ ] M2: Bohater, statystyki, artefakty  ← **aktualny**
-- [ ] M3: Symulacja walki
+- [x] M2: Bohater, statystyki, artefakty (tag m2-done)
+- [ ] M3: Symulacja walki  ← **aktualny**
 - [ ] M4: Loot i ulepszenia pokoi
 - [ ] M5: Run i progresja
 - [ ] M6: UI i „game feel” (a, b, c, d)
