@@ -1,0 +1,158 @@
+[
+  {
+    "id": "iron_helm",
+    "nameKey": "artifact.iron_helm.name",
+    "descKey": "artifact.iron_helm.desc",
+    "rarity": "common",
+    "tag": "tank",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "maxHp", "kind": "flat", "value": 20 }],
+    "effects": []
+  },
+  {
+    "id": "leather_armor",
+    "nameKey": "artifact.leather_armor.name",
+    "descKey": "artifact.leather_armor.desc",
+    "rarity": "common",
+    "tag": "tank",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "def", "kind": "flat", "value": 3 }],
+    "effects": []
+  },
+  {
+    "id": "sharp_dagger",
+    "nameKey": "artifact.sharp_dagger.name",
+    "descKey": "artifact.sharp_dagger.desc",
+    "rarity": "common",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "atk", "kind": "flat", "value": 3 }],
+    "effects": []
+  },
+  {
+    "id": "runner_boots",
+    "nameKey": "artifact.runner_boots.name",
+    "descKey": "artifact.runner_boots.desc",
+    "rarity": "common",
+    "tag": "swift",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "moveSpeed", "kind": "percentAdd", "value": 0.1 }],
+    "effects": []
+  },
+  {
+    "id": "swift_ring",
+    "nameKey": "artifact.swift_ring.name",
+    "descKey": "artifact.swift_ring.desc",
+    "rarity": "rare",
+    "tag": "swift",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "aspd", "kind": "percentAdd", "value": 0.15 }],
+    "effects": []
+  },
+  {
+    "id": "vigor_amulet",
+    "nameKey": "artifact.vigor_amulet.name",
+    "descKey": "artifact.vigor_amulet.desc",
+    "rarity": "rare",
+    "tag": "tank",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "maxHp", "kind": "percentAdd", "value": 0.15 }],
+    "effects": []
+  },
+  {
+    "id": "rune_sword",
+    "nameKey": "artifact.rune_sword.name",
+    "descKey": "artifact.rune_sword.desc",
+    "rarity": "rare",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "atk", "kind": "percentAdd", "value": 0.2 }],
+    "effects": []
+  },
+  {
+    "id": "hunter_monocle",
+    "nameKey": "artifact.hunter_monocle.name",
+    "descKey": "artifact.hunter_monocle.desc",
+    "rarity": "rare",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [{ "stat": "critChance", "kind": "flat", "value": 0.08 }],
+    "effects": []
+  },
+  {
+    "id": "guardian_mail",
+    "nameKey": "artifact.guardian_mail.name",
+    "descKey": "artifact.guardian_mail.desc",
+    "rarity": "epic",
+    "tag": "tank",
+    "dropWeight": 1,
+    "modifiers": [
+      { "stat": "def", "kind": "flat", "value": 6 },
+      { "stat": "maxHp", "kind": "percentAdd", "value": 0.1 }
+    ],
+    "effects": []
+  },
+  {
+    "id": "ruler_crown",
+    "nameKey": "artifact.ruler_crown.name",
+    "descKey": "artifact.ruler_crown.desc",
+    "rarity": "epic",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [
+      { "stat": "atk", "kind": "percentAdd", "value": 0.15 },
+      { "stat": "aspd", "kind": "percentAdd", "value": 0.1 }
+    ],
+    "effects": []
+  },
+  {
+    "id": "echo_hammer",
+    "nameKey": "artifact.echo_hammer.name",
+    "descKey": "artifact.echo_hammer.desc",
+    "rarity": "rare",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [],
+    "effects": [{ "type": "everyNthAttack", "value": 1.0, "n": 5 }]
+  },
+  {
+    "id": "vampire_stone",
+    "nameKey": "artifact.vampire_stone.name",
+    "descKey": "artifact.vampire_stone.desc",
+    "rarity": "rare",
+    "tag": "vampire",
+    "dropWeight": 1,
+    "modifiers": [],
+    "effects": [{ "type": "lifesteal", "value": 0.05 }]
+  },
+  {
+    "id": "thorn_spikes",
+    "nameKey": "artifact.thorn_spikes.name",
+    "descKey": "artifact.thorn_spikes.desc",
+    "rarity": "rare",
+    "tag": "tank",
+    "dropWeight": 1,
+    "modifiers": [],
+    "effects": [{ "type": "reflect", "value": 0.15 }]
+  },
+  {
+    "id": "headhunter_ring",
+    "nameKey": "artifact.headhunter_ring.name",
+    "descKey": "artifact.headhunter_ring.desc",
+    "rarity": "epic",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [],
+    "effects": [{ "type": "executeBonus", "value": 0.5, "threshold": 0.3 }]
+  },
+  {
+    "id": "first_blow_signet",
+    "nameKey": "artifact.first_blow_signet.name",
+    "descKey": "artifact.first_blow_signet.desc",
+    "rarity": "epic",
+    "tag": "blade",
+    "dropWeight": 1,
+    "modifiers": [],
+    "effects": [{ "type": "firstStrike", "value": 1.0 }]
+  }
+]

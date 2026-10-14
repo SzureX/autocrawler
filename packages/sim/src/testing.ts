@@ -1,4 +1,4 @@
-import { loadGameData, type GameData } from '@loch/data';
+import { loadSpecGameData, type GameData } from '@loch/data';
 import { legalPlacements, placeTile } from './dungeon';
 import type { RaidEvent } from './combat/types';
 import { gridKey } from './grid';
@@ -15,7 +15,7 @@ import type {
 } from './types';
 
 /** Shared game data for tests. */
-export const testData: GameData = loadGameData();
+export const testData: GameData = loadSpecGameData();
 
 /** Builds a dungeon from [x, y, doors, isBoss?] rows; the first row is the start room. */
 export function makeDungeon(rows: [number, number, Dir[], boolean?][]): DungeonState {

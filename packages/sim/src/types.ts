@@ -80,6 +80,8 @@ export interface RaidSummary {
   lootArtifacts: ArtifactInstance[];
   lootUpgrades: string[];
   livesLost: number;
+  /** Monster id that killed the hero (null when the hero survived or died to the environment). */
+  killer?: string | null;
 }
 
 export interface RunState {

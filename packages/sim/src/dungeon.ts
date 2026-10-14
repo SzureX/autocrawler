@@ -1,5 +1,5 @@
 import type { GameData } from '@loch/data';
-import { DIRS, OPPOSITE, posKey, stepPos } from './grid';
+import { DIRS, OPPOSITE, canonicalDoors, posKey, stepPos } from './grid';
 import type { DungeonState, Dir, Pos, RoomInstance, RoomTile, RunState } from './types';
 
 export function roomAt(dungeon: DungeonState, pos: Pos): RoomInstance | undefined {
@@ -50,6 +50,28 @@ export function legalPlacements(
       if (placementConnections(dungeon, tile.doors, pos).length > 0) result.push(pos);
     }
   }
+  if (result.length === 0 && tile.isBoss) return breakthroughPlacements(data, dungeon);
+  return result;
+}
+
+/**
+ * Last-resort rule for the boss only: if a sealed dungeon has no open door at all, the boss room
+ * may be built next to any regular room (a door is opened in that room). Without it the run
+ * could never be won. Regular tiles never use this; they can be discarded instead.
+ */
+function breakthroughPlacements(data: GameData, dungeon: DungeonState): Pos[] {
+  const result: Pos[] = [];
+  for (let y = 0; y < data.balance.grid.height; y++) {
+    for (let x = 0; x < data.balance.grid.width; x++) {
+      const pos = { x, y };
+      if (roomAt(dungeon, pos)) continue;
+      const touches = DIRS.some((d) => {
+        const r = roomAt(dungeon, stepPos(pos, d));
+        return r !== undefined && !r.isBoss;
+      });
+      if (touches) result.push(pos);
+    }
+  }
   return result;
 }
 
@@ -75,6 +97,17 @@ export function placeTile(data: GameData, run: RunState, tileUid: string, pos: P
   if (!legal.some((p) => p.x === pos.x && p.y === pos.y)) {
     throw new Error(`Illegal placement for ${tileUid} at ${posKey(pos)}`);
   }
+  let rooms = run.dungeon.rooms;
+  if (tile.isBoss && placementConnections(run.dungeon, tile.doors, pos).length === 0) {
+    // Breakthrough placement: open a door in the first adjacent regular room (N,E,S,W order).
+    for (const dir of DIRS) {
+      const neighbour = roomAt(run.dungeon, stepPos(pos, dir));
+      if (!neighbour || neighbour.isBoss) continue;
+      const opened = canonicalDoors([...neighbour.doors, OPPOSITE[dir]]);
+      rooms = { ...rooms, [posKey(neighbour.pos)]: { ...neighbour, doors: opened } };
+      break;
+    }
+  }
   const room: RoomInstance = {
     ...tile,
     pos: { x: pos.x, y: pos.y },
@@ -84,6 +117,6 @@ export function placeTile(data: GameData, run: RunState, tileUid: string, pos: P
   return {
     ...run,
     hand: run.hand.filter((t) => t.uid !== tileUid),
-    dungeon: { ...run.dungeon, rooms: { ...run.dungeon.rooms, [posKey(pos)]: room } },
+    dungeon: { ...run.dungeon, rooms: { ...rooms, [posKey(pos)]: room } },
   };
 }

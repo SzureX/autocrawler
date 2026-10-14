@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { loadGameData } from '@loch/data';
+import { loadSpecGameData } from '@loch/data';
 import { chooseTile, createRun, equip, grantArtifact } from '@loch/sim';
 import { previewStatDiff } from './previewStats';
 
-const data = loadGameData();
+const data = loadSpecGameData();
 
 function prepRun() {
   const run = createRun(data, 1, 'warrior');

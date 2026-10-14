@@ -31,6 +31,7 @@ export function PrepScreen({ run }: { run: RunState }) {
   const removeUpgrade = useGameStore((s) => s.removeUpgrade);
   const equipArtifact = useGameStore((s) => s.equipArtifact);
   const startRaid = useGameStore((s) => s.startRaid);
+  const discardTile = useGameStore((s) => s.discardTile);
   const [selectedUpgrade, setSelectedUpgrade] = useState<string | null>(null);
   const scale = useStageScale();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
@@ -89,6 +90,11 @@ export function PrepScreen({ run }: { run: RunState }) {
             <h3>{t('ui.prep.hand')}</h3>
             {tile ? <TileView tile={tile} /> : <p>{t('ui.prep.handEmpty')}</p>}
             {tile && <p>{noSpot ? t('ui.prep.noSpot') : t('ui.prep.placeHint')}</p>}
+            {tile && noSpot && !tile.isBoss && (
+              <button type="button" onClick={discardTile} data-testid="discard-tile">
+                {t('ui.prep.discard')}
+              </button>
+            )}
             <h3>{t('ui.upgrades.title')}</h3>
             {storage.length === 0 && <p className="hint">{t('ui.upgrades.empty')}</p>}
             <div className="stack-list" data-testid="upgrade-storage">

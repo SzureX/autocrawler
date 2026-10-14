@@ -463,4 +463,4 @@ Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby da�
 - [x] M4: Loot i ulepszenia pokoi (tag m4-done)
 - [x] M5: Run i progresja (tag m5-done)
 - [x] M6: UI i „game feel” (a, b, c, d) (tag m6-done)
-- [ ] M7: Balans, telemetria, domknięcie  ← **aktualny**
+- [x] M7: Balans, telemetria, domknięcie (tag m7-done)

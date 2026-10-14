@@ -1,0 +1,103 @@
+{
+  "startLives": 5,
+  "wavesToBoss": 10,
+  "grid": {
+    "width": 9,
+    "height": 9
+  },
+  "maxRooms": 15,
+  "tileOffer": {
+    "count": 3,
+    "doorCountWeights": {
+      "2": 50,
+      "3": 35,
+      "4": 15
+    },
+    "maxMaskRerolls": 20
+  },
+  "levelStatMultipliers": [1, 1.1, 1.2, 1.4, 1.6, 1.8, 2.1, 2.4, 2.7, 3, 3.3],
+  "levelMult": [1, 2, 4],
+  "baseMonsterCount": [
+    {
+      "fromLevel": 1,
+      "toLevel": 3,
+      "value": [2, 3]
+    },
+    {
+      "fromLevel": 4,
+      "toLevel": 6,
+      "value": [3, 4]
+    },
+    {
+      "fromLevel": 7,
+      "toLevel": 11,
+      "value": [4, 5]
+    }
+  ],
+  "rarityWeights": [
+    {
+      "fromLevel": 1,
+      "toLevel": 3,
+      "value": {
+        "common": 80,
+        "rare": 18,
+        "epic": 2
+      }
+    },
+    {
+      "fromLevel": 4,
+      "toLevel": 6,
+      "value": {
+        "common": 60,
+        "rare": 32,
+        "epic": 8
+      }
+    },
+    {
+      "fromLevel": 7,
+      "toLevel": 11,
+      "value": {
+        "common": 40,
+        "rare": 42,
+        "epic": 18
+      }
+    }
+  ],
+  "artifactDrops": [
+    {
+      "fromLevel": 1,
+      "toLevel": 11,
+      "value": [4, 6]
+    }
+  ],
+  "upgradeDrops": [
+    {
+      "fromLevel": 1,
+      "toLevel": 11,
+      "value": [1, 2]
+    }
+  ],
+  "elite": {
+    "hpMult": 2.5,
+    "atkMult": 1.5,
+    "dropWeightMult": 3
+  },
+  "monsterDropWeight": 1,
+  "combat": {
+    "tickRate": 20,
+    "tickLimit": 6000,
+    "board": {
+      "width": 9,
+      "height": 7
+    },
+    "retargetTicks": 10
+  },
+  "effects": {
+    "healOnKillPct": 0.03,
+    "aoeMult": 0.6
+  },
+  "threat": {
+    "mediumFrom": 0.45,
+    "highFrom": 0.9
+  }
+}

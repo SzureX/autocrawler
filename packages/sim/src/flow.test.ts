@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { GameData } from '@loch/data';
+import { loadGameData, type GameData } from '@loch/data';
 import { playRun } from './bots';
 import { simulateRaid } from './combat/raid';
 import { legalPlacements, placeTile } from './dungeon';
@@ -204,15 +204,11 @@ describe('bot runs through the whole state machine', () => {
     expect(hasBossRoom(lost)).toBe(true);
   });
 
-  it('a normal-strength bot never gets stuck or times out over many runs', () => {
-    for (let seed = 1; seed <= 40; seed++) {
+  it('bots on the shipped balance data never get stuck or time out', () => {
+    const live = loadGameData();
+    for (let seed = 1; seed <= 60; seed++) {
       for (const bot of ['random', 'greedy-atk', 'greedy-hp'] as const) {
-        const out = playRun(
-          testData,
-          seed,
-          ['warrior', 'rogue', 'mage'][seed % 3] ?? 'warrior',
-          bot,
-        );
+        const out = playRun(live, seed, ['warrior', 'rogue', 'mage'][seed % 3] ?? 'warrior', bot);
         expect(['Victory', 'GameOver']).toContain(out.outcome);
         expect(out.raids.every((r) => r.result.reason !== 'timeout')).toBe(true);
         expect(out.run.wavesWon).toBeLessThanOrEqual(10);

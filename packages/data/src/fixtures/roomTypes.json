@@ -1,0 +1,74 @@
+[
+  {
+    "id": "chamber",
+    "nameKey": "room.chamber.name",
+    "descKey": "room.chamber.desc",
+    "icon": "🏛️",
+    "offerWeight": 40,
+    "spawnMode": "base",
+    "dropWeightMult": 1,
+    "onEnter": [],
+    "onClear": [],
+    "isBoss": false
+  },
+  {
+    "id": "elite_room",
+    "nameKey": "room.elite_room.name",
+    "descKey": "room.elite_room.desc",
+    "icon": "⚔️",
+    "offerWeight": 15,
+    "spawnMode": "single_elite",
+    "dropWeightMult": 1,
+    "onEnter": [],
+    "onClear": [],
+    "isBoss": false
+  },
+  {
+    "id": "treasury",
+    "nameKey": "room.treasury.name",
+    "descKey": "room.treasury.desc",
+    "icon": "💰",
+    "offerWeight": 15,
+    "spawnMode": "base_minus_1",
+    "dropWeightMult": 2,
+    "onEnter": [],
+    "onClear": [{ "kind": "bonusArtifactChance", "chance": 0.5, "count": 1 }],
+    "isBoss": false
+  },
+  {
+    "id": "trap_room",
+    "nameKey": "room.trap_room.name",
+    "descKey": "room.trap_room.desc",
+    "icon": "🪤",
+    "offerWeight": 15,
+    "spawnMode": "base_minus_1",
+    "dropWeightMult": 1,
+    "onEnter": [{ "kind": "damagePctMaxHp", "value": 0.2 }],
+    "onClear": [{ "kind": "grantRoomUpgrade", "count": 1 }],
+    "isBoss": false
+  },
+  {
+    "id": "sanctuary",
+    "nameKey": "room.sanctuary.name",
+    "descKey": "room.sanctuary.desc",
+    "icon": "⛲",
+    "offerWeight": 15,
+    "spawnMode": "base_minus_1",
+    "dropWeightMult": 1,
+    "onEnter": [{ "kind": "healPctMaxHp", "value": 0.3 }],
+    "onClear": [],
+    "isBoss": false
+  },
+  {
+    "id": "boss_room",
+    "nameKey": "room.boss_room.name",
+    "descKey": "room.boss_room.desc",
+    "icon": "🏰",
+    "offerWeight": 0,
+    "spawnMode": "boss",
+    "dropWeightMult": 1,
+    "onEnter": [],
+    "onClear": [],
+    "isBoss": true
+  }
+]

@@ -128,3 +128,21 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 - Znane problemy / dług: kamera nie podąża za bohaterem (widać cały pokój); wizualia to placeholdery; wskaźnik zagrożenia ma progi do dostrojenia w M7.
 - Jak to zobaczyć/uruchomić: pnpm dev; pnpm e2e (zrzuty w artifacts/screens/).
 - Proponowany następny krok: M7 (balans, telemetria, README).
+
+## Plan M7 (start: commit 484700f)
+
+- Boty (packages/sim/src/bots.ts) ZAMROŻONE od tego commita: nie zmieniam ich, żeby poprawić wyniki. Balans tylko w packages/data, maks. 12 iteracji, każda w docs/BALANCE.md.
+
+1. tools/balance.ts (+ worker threads): 10 000 runów na bota, metryki z sekcji 12.
+2. Telemetria lokalna: track(event, props) do bufora w pamięci + eksport JSON w overlayu.
+3. Iteracje balansu (dane), raport w docs/BALANCE.md.
+4. README, pnpm build, docs/FINAL_REPORT.md.
+
+## Raport M7: Balans, telemetria, domknięcie
+
+- Zrobione: tools/balance.ts (+balance-core, wątki robocze, 10 000 runów na bota w ok. 2 min), 12 iteracji balansu w danych (docs/BALANCE.md), telemetria lokalna (`track`, bufor w pamięci, eksport JSON w overlayu, zdarzenia run_started/raid_resolved/run_ended z klasą, falą, życiami, ekwipunkiem i przyczyną śmierci), README, poprawka sim dla zamkniętego lochu (boss) i przycisk „Odrzuć kafelek”.
+- Wynik pnpm check: typecheck OK / lint OK / testy: 176 w 20 plikach. pnpm e2e: 8 testów OK. pnpm build OK (bez żądań sieciowych).
+- Wyniki balansu (10 000 runów na bota): greedy-atk 50,0%, greedy-hp 37,6%, random 2,5%; 0 timeoutów.
+- Niespełnione cele z sekcji 12: rozrzut klas dla greedy-hp (37,5 pkt proc., mag 17,6%), rajdy poz. 1–2 krótsze niż 15 s, artefakty na run 74–87 (cel 45–65), długość runu atk/random ok. 17 min (cel 20–35). Szczegóły w BALANCE.md i FINAL_REPORT.md.
+- Decyzje podjęte samodzielnie: patrz DECISIONS.md (M7).
+- Jak to zobaczyć/uruchomić: pnpm dev, pnpm balance -- --runs 10000 --bot all.

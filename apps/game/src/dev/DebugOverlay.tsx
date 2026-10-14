@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RUN_PHASES } from '@loch/sim';
 import { t } from '../i18n';
+import { exportTelemetryJson, getEvents } from '../telemetry/telemetry';
 import { gameData, useGameStore } from '../store/gameStore';
 
 const panelStyle: React.CSSProperties = {
@@ -38,6 +39,12 @@ export function DebugOverlay() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
+
+  const exportTelemetry = () => {
+    const json = exportTelemetryJson();
+    void navigator.clipboard?.writeText(json).catch(() => undefined);
+    setMessage(t('debug.telemetryExported', { n: getEvents().length }));
+  };
 
   if (!open) return null;
 
@@ -125,6 +132,9 @@ export function DebugOverlay() {
               {t('debug.nextWave')}
             </button>
             <button onClick={exportRun}>{t('debug.export')}</button>
+            <button onClick={exportTelemetry} data-testid="debug-export-telemetry">
+              {t('debug.telemetry')}
+            </button>
             <button onClick={resetRun}>{t('debug.clearSave')}</button>
           </div>
         </div>
