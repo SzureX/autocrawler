@@ -9,3 +9,4 @@
 - Pakowanie Electron/Tauri.
 - Boty z lepszą heurystyką (np. mieszany styl HP/ATK, wybór kafelka) i drugi zestaw celów balansu per klasa.
 - Konfigurowalne progi wskaźnika zagrożenia i kalibracja względem wyników botów.
+- Zbadać rzadki timeout testu e2e `full-run.spec.ts` (patrz BLOCKERS.md): rozważyć `retries: 1` lub dłuższy timeout i diagnostykę (trace).

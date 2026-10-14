@@ -150,3 +150,13 @@ Monorepo pnpm, dane + Zod + loader, sim (rng, fazy, createRun, serializacja), ap
 ## Przejście z Pixi na Three.js (wariant B, na życzenie właściciela)
 
 Plan: 1) zależność `three` (+ @types/three) zatwierdzona w rozmowie, `pixi.js` do usunięcia; 2) czyste moduły view/layout.ts (współrzędne, kamera, kierunek) z testami; 3) RaidCanvas na Three.js z tym samym API (init/load/setSpeed/skip/onState/destroy): pokój 3D z podłogą i ścianami, drzwi, światła i cienie, placeholdery brył per potwór, billboardy z emoji, paski HP, liczby obrażeń, błysk trafienia, kamera podążająca za bohaterem; 4) testy e2e i zrzuty; 5) aktualizacja CLAUDE.md/README/DECISIONS.
+
+## Etap porządkowy: stan wyjściowy (2026-10-15, gałąź `cleanup` z `prototype`, commit 6acb210)
+
+- `pnpm check`: typecheck, ESLint, Prettier czyste; 182 testy w 21 plikach przechodzą.
+- `pnpm build`: OK.
+- `pnpm e2e`: pierwsze uruchomienie 7 z 8 (timeout testu pełnego runu), kolejne 4 pełne uruchomienia 8 z 8 (ok. 26 s) i 2 uruchomienia samego testu OK. Traktowane jako rzadka niestabilność, opisana w BLOCKERS.md; kodu nie zmieniano.
+
+## Etap porządkowy, etap 1: CLAUDE.md zgodny z kodem
+
+- Zrobione: ścieżka meta.json, lista zatwierdzonych zależności (three, @types/three, narzędzia dev), struktura repo i komendy (sekcja 4), tabela skalowania 6.7 ze stanem faktycznym i notką OTWARTA, wyjątek Bossa w zamkniętym lochu w 6.2 (OTWARTA), strumienie RNG, sygnatury API i pole `nextUid`, tabele 8.1/8.2/8.4 ze stroionymi wartościami i pierwotnymi w nawiasach (8.3 i 8.5 bez zmian: zweryfikowano z fixtures), tabela „Stan faktyczny” pod celami balansu, sekcja 16. `grep -ri pixi` w CLAUDE.md zwraca tylko dwie wzmianki historyczne w opisie M3.9 i M6c.
