@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './ui/styles.css';
 import { App } from './ui/App';
+import { Stage } from './ui/Stage';
 import { DebugOverlay } from './dev/DebugOverlay';
 import { DevRaidPage } from './dev/DevRaidPage';
 
@@ -13,7 +14,13 @@ const showDevRaid = import.meta.env.DEV && window.location.pathname.endsWith('/d
 
 createRoot(rootEl).render(
   <StrictMode>
-    {showDevRaid ? <DevRaidPage /> : <App />}
+    {showDevRaid ? (
+      <DevRaidPage />
+    ) : (
+      <Stage>
+        <App />
+      </Stage>
+    )}
     {import.meta.env.DEV && !showDevRaid && <DebugOverlay />}
   </StrictMode>,
 );

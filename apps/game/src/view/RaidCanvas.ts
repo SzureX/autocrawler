@@ -3,7 +3,7 @@ import type { RaidEvent } from '@loch/sim';
 import { gameData } from '../store/gameStore';
 import { RaidPlayback, type PlaybackState } from './playback';
 
-const CELL = 72;
+const CELL = 96;
 const TICK_RATE = 20;
 
 const COLORS = {
@@ -27,6 +27,7 @@ const FLOATER_COLORS: Record<string, number> = {
   heal: 0x5fd38a,
   miss: 0x9aa6bf,
   trap: 0xff9a4a,
+  loot: 0xffffff,
 };
 
 function icon(monsterId: string): string {
@@ -176,16 +177,14 @@ export class RaidCanvas {
       g.rect(px - barW / 2, py - radius - 10, barW * frac, 5).fill(
         frac < 0.3 ? COLORS.hpLow : COLORS.hpFill,
       );
-      this.label(`u${u.id}`, icon(u.monsterId), u.boss ? 36 : 26).position.set(px, py);
+      this.label(`u${u.id}`, icon(u.monsterId), u.boss ? 48 : 34).position.set(px, py);
     }
     for (const f of state.floaters) {
-      const u = state.units.find((x) => x.id === f.unit);
-      if (!u) continue;
       const age = state.tick - f.tick;
-      const t = this.label(`f${f.id}`, f.text, f.kind === 'crit' ? 22 : 16);
+      const t = this.label(`f${f.id}`, f.text, f.kind === 'crit' ? 30 : 22);
       t.style.fill = FLOATER_COLORS[f.kind] ?? 0xffffff;
       t.alpha = Math.max(0, 1 - age / 24);
-      t.position.set(u.x * CELL + CELL / 2, u.y * CELL - age * 0.8);
+      t.position.set(f.x * CELL + CELL / 2, f.y * CELL - age * 1.2);
     }
   }
 }

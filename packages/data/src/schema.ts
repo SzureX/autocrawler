@@ -177,6 +177,7 @@ export const balanceSchema = z.object({
     board: z.object({ width: z.number().int().positive(), height: z.number().int().positive() }),
     retargetTicks: z.number().int().positive(),
   }),
+  threat: z.object({ mediumFrom: z.number().positive(), highFrom: z.number().positive() }),
   effects: z.object({
     healOnKillPct: z.number(),
     aoeMult: z.number(),

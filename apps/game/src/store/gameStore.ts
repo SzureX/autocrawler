@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import { loadGameData, type GameData } from '@loch/data';
 import {
+  continueRun,
+  resolveRaid,
+  simulateRaid,
+  startRaid,
+  type RaidResult,
   assignUpgrade,
   removeUpgrade,
   chooseTile,
@@ -29,6 +34,13 @@ function freshSeed(): number {
   return buf[0] ?? 1;
 }
 
+/** DEV only: ?seed=123 in the URL makes runs reproducible (used by e2e tests). */
+function urlSeed(): number | null {
+  if (!import.meta.env.DEV) return null;
+  const raw = new URLSearchParams(globalThis.location?.search ?? '').get('seed');
+  return raw !== null && Number.isFinite(Number(raw)) ? Number(raw) : null;
+}
+
 interface GameStore {
   run: RunState | null;
   startRun: (classId: string, seed?: number) => void;
@@ -45,12 +57,20 @@ interface GameStore {
   debugSetPhase: (phase: RunPhase) => void;
   /** Debug: counts a won raid and opens the next tile offer (the full flow arrives in M5). */
   debugNextWave: () => void;
+  /** Prep -> Action. The raid itself is replayed by the view from the simulated log. */
+  startRaid: () => void;
+  /** Action -> Resolve: applies the (deterministic) raid result to the run. */
+  finishRaid: () => void;
+  continueRun: () => void;
+  debugResolve: (won: boolean) => void;
+  debugSetWaves: (waves: number) => void;
   resetRun: () => void;
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
   run: saveStore.load(),
-  startRun: (classId, seed) => set({ run: createRun(gameData, seed ?? freshSeed(), classId) }),
+  startRun: (classId, seed) =>
+    set({ run: createRun(gameData, seed ?? urlSeed() ?? freshSeed(), classId) }),
   setRun: (run) => set({ run }),
   chooseTile: (tileUid) => {
     const { run } = get();
@@ -102,6 +122,41 @@ export const useGameStore = create<GameStore>((set, get) => ({
         ? { ...generateBossOffer(gameData, next), phase: 'BossOffer' }
         : { ...generateTileOffer(gameData, next), phase: 'TileOffer' },
     });
+  },
+  startRaid: () => {
+    const { run } = get();
+    if (run) set({ run: startRaid(run) });
+  },
+  finishRaid: () => {
+    const { run } = get();
+    if (run) set({ run: resolveRaid(run, simulateRaid(gameData, run, { recordLog: false })) });
+  },
+  continueRun: () => {
+    const { run } = get();
+    if (run) set({ run: continueRun(gameData, run) });
+  },
+  debugResolve: (won) => {
+    const { run } = get();
+    if (!run || run.phase !== 'Prep' || run.hand.length > 0) return;
+    const fake: RaidResult = {
+      won,
+      reason: won ? 'cleared' : 'died',
+      log: [],
+      ticks: 0,
+      roomsCleared: 0,
+      roomsTotal: 0,
+      kills: 0,
+      heroHp: 0,
+      heroMaxHp: 0,
+      death: null,
+      lootArtifacts: [],
+      lootUpgrades: [],
+    };
+    set({ run: resolveRaid(startRaid(run), fake) });
+  },
+  debugSetWaves: (waves) => {
+    const { run } = get();
+    if (run) set({ run: { ...run, wavesWon: Math.max(0, Math.min(10, waves)) } });
   },
   resetRun: () => {
     saveStore.clear();

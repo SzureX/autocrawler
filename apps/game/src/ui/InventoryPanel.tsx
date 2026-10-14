@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react';
 import { backpackStacks, computeHeroStats, type RunState, type StatBlock } from '@loch/sim';
 import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
+import { DragButton, DropButton, slotDropId, stackDragId } from './dnd';
+import { artifactName } from './names';
 import { previewStatDiff, type StatPreview } from './previewStats';
 
 const STAT_ORDER: (keyof StatBlock)[] = [
@@ -35,7 +37,10 @@ function StatsPanel({ run, preview }: { run: RunState; preview: StatPreview | nu
               <tr key={k}>
                 <td>{t(`ui.stat.${k}`)}</td>
                 <td data-testid={`stat-${k}`}>{formatStat(k, stats[k])}</td>
-                <td className={d ? (d.delta > 0 ? 'diff-up' : 'diff-down') : ''}>
+                <td
+                  className={d ? (d.delta > 0 ? 'diff-up' : 'diff-down') : ''}
+                  data-testid={`diff-${k}`}
+                >
                   {d ? `→ ${formatStat(k, d.after)}` : ''}
                 </td>
               </tr>
@@ -60,12 +65,10 @@ export function InventoryPanel({ run }: { run: RunState }) {
 
   let preview: StatPreview | null = null;
   if (hoverSlot !== null) {
-    if (selectedValid && selectedUid)
+    if (selectedValid && selectedUid) {
       preview = { kind: 'equip', artifactUid: selectedUid, slot: hoverSlot };
-    else if (run.equipped[hoverSlot]) preview = { kind: 'unequip', slot: hoverSlot };
+    } else if (run.equipped[hoverSlot]) preview = { kind: 'unequip', slot: hoverSlot };
   }
-
-  const artifactName = (id: string): string => t(gameData.artifacts[id]?.nameKey ?? id);
 
   return (
     <div className="inventory">
@@ -73,8 +76,9 @@ export function InventoryPanel({ run }: { run: RunState }) {
         <h3>{t('ui.inv.slots')}</h3>
         <div className="slot-grid">
           {run.equipped.map((inst, i) => (
-            <button
+            <DropButton
               key={i}
+              dropId={slotDropId(i)}
               type="button"
               className={`slot${inst ? ' filled' : ''}`}
               data-testid={`slot-${i}`}
@@ -98,7 +102,7 @@ export function InventoryPanel({ run }: { run: RunState }) {
               ) : (
                 <small>{t('ui.inv.slot', { n: i + 1 })}</small>
               )}
-            </button>
+            </DropButton>
           ))}
         </div>
         <p className="hint">{selectedValid ? t('ui.inv.selectHint') : t('ui.inv.pickHint')}</p>
@@ -126,8 +130,9 @@ export function InventoryPanel({ run }: { run: RunState }) {
             const first = s.uids[0] ?? '';
             const isSel = s.uids.includes(selectedUid ?? '');
             return (
-              <button
+              <DragButton
                 key={`${s.artifactId}-${s.level}`}
+                dragId={stackDragId(s.artifactId, s.level)}
                 type="button"
                 className={`stack${isSel ? ' selected' : ''}${mergeMode && s.mergeable ? ' mergeable' : ''}`}
                 data-testid={`stack-${s.artifactId}-${s.level}`}
@@ -146,7 +151,7 @@ export function InventoryPanel({ run }: { run: RunState }) {
                 <small>
                   {t('ui.inv.level', { level: s.level })} ×{s.count}
                 </small>
-              </button>
+              </DragButton>
             );
           })}
         </div>

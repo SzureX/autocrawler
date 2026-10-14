@@ -19,11 +19,22 @@ export interface ViewUnit {
 
 export interface Floater {
   id: number;
-  unit: number;
   tick: number;
+  /** Board position where the floater appeared (units may die before it fades). */
+  x: number;
+  y: number;
   text: string;
-  kind: 'damage' | 'crit' | 'heal' | 'miss' | 'trap';
+  kind: 'damage' | 'crit' | 'heal' | 'miss' | 'trap' | 'loot';
 }
+
+/** One line of the short HUD event log; the UI turns it into text through i18n. */
+export type LogLine =
+  | { id: number; tick: number; kind: 'room'; roomTypeId: string }
+  | { id: number; tick: number; kind: 'death'; monsterId: string; boss: boolean }
+  | { id: number; tick: number; kind: 'phase'; monsterId: string }
+  | { id: number; tick: number; kind: 'cleared' }
+  | { id: number; tick: number; kind: 'loot'; item: 'artifact' | 'upgrade'; ref: string }
+  | { id: number; tick: number; kind: 'heroDied' };
 
 interface Mover {
   from: Cell;
@@ -39,12 +50,16 @@ export interface PlaybackState {
   upgradeId: string | null;
   units: ViewUnit[];
   floaters: Floater[];
+  lines: LogLine[];
   ended: boolean;
   won: boolean | null;
   reason: string | null;
   heroMaxHp: number;
   heroHp: number;
 }
+
+const LOG_LINES = 8;
+const FLOATER_TICKS = 24;
 
 /**
  * Replays a raid log. It never computes combat: it only applies events in order and
@@ -56,7 +71,8 @@ export class RaidPlayback {
   private units: Record<number, ViewUnit> = {};
   private movers: Record<number, Mover> = {};
   private floaters: Floater[] = [];
-  private floaterId = 0;
+  private lines: LogLine[] = [];
+  private nextId = 0;
   private current = 0;
   private roomKey: string | null = null;
   private roomTypeId: string | null = null;
@@ -90,7 +106,7 @@ export class RaidPlayback {
       this.apply(e);
       this.cursor++;
     }
-    this.floaters = this.floaters.filter((f) => this.current - f.tick < 24);
+    this.floaters = this.floaters.filter((f) => this.current - f.tick < FLOATER_TICKS);
     for (const [id, m] of Object.entries(this.movers)) {
       const u = this.units[Number(id)];
       if (!u) continue;
@@ -113,6 +129,7 @@ export class RaidPlayback {
       upgradeId: this.upgradeId,
       units: Object.values(this.units).filter((u) => u.alive),
       floaters: [...this.floaters],
+      lines: this.lines.slice(-LOG_LINES),
       ended: this.ended,
       won: this.won,
       reason: this.reason,
@@ -121,8 +138,18 @@ export class RaidPlayback {
     };
   }
 
-  private float(unit: number, tick: number, text: string, kind: Floater['kind']): void {
-    this.floaters.push({ id: this.floaterId++, unit, tick, text, kind });
+  private float(
+    at: { x: number; y: number } | undefined,
+    tick: number,
+    text: string,
+    kind: Floater['kind'],
+  ): void {
+    if (!at) return;
+    this.floaters.push({ id: this.nextId++, tick, x: at.x, y: at.y, text, kind });
+  }
+
+  private line(line: DistributiveOmit<LogLine, 'id'>): void {
+    this.lines.push({ ...line, id: this.nextId++ } as LogLine);
   }
 
   private apply(e: RaidEvent): void {
@@ -156,6 +183,7 @@ export class RaidPlayback {
         this.roomKey = e.roomKey;
         this.roomTypeId = e.roomTypeId;
         this.upgradeId = e.upgradeId;
+        if (!e.transit) this.line({ tick: e.tick, kind: 'room', roomTypeId: e.roomTypeId });
         break;
       }
       case 'Spawn':
@@ -179,7 +207,7 @@ export class RaidPlayback {
       case 'Attack': {
         const u = this.units[e.unit];
         if (u) u.attackTick = e.tick;
-        if (!e.hit) this.float(e.target, e.tick, 'miss', 'miss');
+        if (!e.hit) this.float(this.units[e.target], e.tick, 'miss', 'miss');
         break;
       }
       case 'Damage': {
@@ -188,24 +216,40 @@ export class RaidPlayback {
           u.hp = e.hp;
           u.hitTick = e.tick;
         }
-        this.float(
-          e.unit,
-          e.tick,
-          String(Math.round(e.amount)),
-          e.crit ? 'crit' : e.kind === 'trap' ? 'trap' : 'damage',
-        );
+        const kind = e.crit ? 'crit' : e.kind === 'trap' ? 'trap' : 'damage';
+        this.float(u, e.tick, String(Math.round(e.amount)), kind);
         break;
       }
       case 'Heal': {
         const u = this.units[e.unit];
         if (u) u.hp = e.hp;
-        this.float(e.unit, e.tick, `+${Math.round(e.amount)}`, 'heal');
+        this.float(u, e.tick, `+${Math.round(e.amount)}`, 'heal');
         break;
       }
       case 'Death': {
         const u = this.units[e.unit];
-        if (u) u.alive = false;
+        if (u) {
+          u.alive = false;
+          if (e.unit === 0) this.line({ tick: e.tick, kind: 'heroDied' });
+          else this.line({ tick: e.tick, kind: 'death', monsterId: u.monsterId, boss: u.boss });
+        }
         delete this.movers[e.unit];
+        break;
+      }
+      case 'PhaseChange': {
+        const u = this.units[e.unit];
+        if (u) this.line({ tick: e.tick, kind: 'phase', monsterId: u.monsterId });
+        break;
+      }
+      case 'RoomCleared':
+        this.line({ tick: e.tick, kind: 'cleared' });
+        break;
+      case 'LootDropped': {
+        const item = e.item.kind;
+        const ref = e.item.kind === 'artifact' ? e.item.artifact.artifactId : e.item.upgradeId;
+        this.line({ tick: e.tick, kind: 'loot', item, ref });
+        const at = e.unit !== null ? this.units[e.unit] : this.units[0];
+        this.float(at, e.tick, '🎁', 'loot');
         break;
       }
       case 'RaidEnd':
@@ -218,3 +262,5 @@ export class RaidPlayback {
     }
   }
 }
+
+type DistributiveOmit<T, K extends keyof never> = T extends unknown ? Omit<T, K> : never;
