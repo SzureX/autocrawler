@@ -5,3 +5,5 @@ artifacts
 CLAUDE.md
 test-results
 playwright-report
+apps/game/public/models
+packages/data/src/json/roomLayouts.json

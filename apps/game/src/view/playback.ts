@@ -1,4 +1,4 @@
-import type { Cell, RaidEvent } from '@loch/sim';
+import type { Cell, Dir, RaidEvent } from '@loch/sim';
 
 export interface ViewUnit {
   id: number;
@@ -15,6 +15,10 @@ export interface ViewUnit {
   hitTick: number;
   /** Tick of the last attack made (drives attack lunges). */
   attackTick: number;
+  /** Unit id of the last attack target and where it stood then (the view turns towards it). */
+  attackTarget: number | null;
+  targetX: number;
+  targetY: number;
 }
 
 export interface Floater {
@@ -43,11 +47,23 @@ interface Mover {
   duration: number;
 }
 
+/** The room's chest as the view needs it: where it stands and when its lid went up. */
+export interface ViewChest {
+  x: number;
+  y: number;
+  /** Tick at which the hero opened it, or null while it is still closed. */
+  openedTick: number | null;
+}
+
 export interface PlaybackState {
   tick: number;
   roomKey: string | null;
   roomTypeId: string | null;
   upgradeId: string | null;
+  chest: ViewChest | null;
+  /** Layout of the room being shown (null: the default look) and the sides that have doors. */
+  layoutId: string | null;
+  doors: Dir[];
   units: ViewUnit[];
   floaters: Floater[];
   lines: LogLine[];
@@ -77,6 +93,9 @@ export class RaidPlayback {
   private roomKey: string | null = null;
   private roomTypeId: string | null = null;
   private upgradeId: string | null = null;
+  private chest: ViewChest | null = null;
+  private layoutId: string | null = null;
+  private doors: Dir[] = ['N', 'E', 'S', 'W'];
   private ended = false;
   private won: boolean | null = null;
   private reason: string | null = null;
@@ -127,6 +146,9 @@ export class RaidPlayback {
       roomKey: this.roomKey,
       roomTypeId: this.roomTypeId,
       upgradeId: this.upgradeId,
+      chest: this.chest ? { ...this.chest } : null,
+      layoutId: this.layoutId,
+      doors: this.doors,
       units: Object.values(this.units).filter((u) => u.alive),
       floaters: [...this.floaters],
       lines: this.lines.slice(-LOG_LINES),
@@ -168,6 +190,9 @@ export class RaidPlayback {
           alive: true,
           hitTick: -100,
           attackTick: -100,
+          attackTarget: null,
+          targetX: 0,
+          targetY: 0,
         };
         break;
       case 'RoomEnter': {
@@ -183,6 +208,9 @@ export class RaidPlayback {
         this.roomKey = e.roomKey;
         this.roomTypeId = e.roomTypeId;
         this.upgradeId = e.upgradeId;
+        this.layoutId = e.layoutId;
+        this.doors = e.doors;
+        this.chest = e.chest ? { x: e.chest.x, y: e.chest.y, openedTick: null } : null;
         if (!e.transit) this.line({ tick: e.tick, kind: 'room', roomTypeId: e.roomTypeId });
         break;
       }
@@ -199,6 +227,9 @@ export class RaidPlayback {
           alive: true,
           hitTick: -100,
           attackTick: -100,
+          attackTarget: null,
+          targetX: 0,
+          targetY: 0,
         };
         break;
       case 'Move':
@@ -206,7 +237,15 @@ export class RaidPlayback {
         break;
       case 'Attack': {
         const u = this.units[e.unit];
-        if (u) u.attackTick = e.tick;
+        if (u) {
+          u.attackTick = e.tick;
+          u.attackTarget = e.target;
+          const target = this.units[e.target];
+          if (target) {
+            u.targetX = target.x;
+            u.targetY = target.y;
+          }
+        }
         if (!e.hit) this.float(this.units[e.target], e.tick, 'miss', 'miss');
         break;
       }
@@ -241,6 +280,9 @@ export class RaidPlayback {
         if (u) this.line({ tick: e.tick, kind: 'phase', monsterId: u.monsterId });
         break;
       }
+      case 'ChestOpen':
+        if (this.chest) this.chest.openedTick = e.tick;
+        break;
       case 'RoomCleared':
         this.line({ tick: e.tick, kind: 'cleared' });
         break;

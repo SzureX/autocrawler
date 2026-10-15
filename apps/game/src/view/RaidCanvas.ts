@@ -1,8 +1,12 @@
 import {
+  AnimationMixer,
   Color,
+  LoopOnce,
+  type AnimationAction,
   Group,
   Mesh,
   MeshStandardMaterial,
+  type Object3D,
   PCFSoftShadowMap,
   PerspectiveCamera,
   Scene,
@@ -22,15 +26,42 @@ import {
   smoothing,
   type Vec2,
 } from './layout';
-import { RaidPlayback, type Floater, type PlaybackState, type ViewUnit } from './playback';
+import {
+  RaidPlayback,
+  type Floater,
+  type PlaybackState,
+  type ViewChest,
+  type ViewUnit,
+} from './playback';
+import { builderFiles, propFiles } from './builderCatalog';
+import { sharedModels } from './models';
 import { ShapeCache, TextureCache } from './placeholders';
 import { RoomStage } from './roomStage';
+import { MODEL_SCALE } from './wallLayout';
 
 const VIEW_WIDTH = 1000;
 const VIEW_HEIGHT = 680;
 const TICK_RATE = 20;
 const CAMERA_OFFSET = { y: 7.6, z: 6.8 };
 const BAR_WIDTH = 0.8;
+/** Clip played for each animation state (names from the Rig_Medium packs). */
+const CLIPS = {
+  idle: 'Idle_A',
+  move: 'Walking_B',
+  attack: 'Throw',
+  death: 'Death_A',
+} as const;
+type AnimState = keyof typeof CLIPS;
+const FADE = 0.15;
+/** The chest lid: hinge on the back edge of the base (model units) and how far it swings up. */
+const LID_HINGE = { y: 0.6, z: -0.65 };
+const LID_OPEN_ANGLE = 1.9;
+const LID_OPEN_TICKS = 10;
+/** Game-time seconds a hit reaction lasts / a dying unit stays on screen. */
+const ATTACK_SECONDS = 0.5;
+const DEATH_SECONDS = 1.3;
+/** Height of a unit model on the board (cells are 1 unit; the hero capsule is about 1.05). */
+const MODEL_UNIT_HEIGHT = 1.15;
 
 const COLORS = {
   hero: 0x4caf70,
@@ -56,12 +87,32 @@ function icon(monsterId: string): string {
   return gameData.monsters[monsterId]?.icon ?? gameData.bosses[monsterId]?.icon ?? '?';
 }
 
+interface ChestView {
+  root: Group;
+  closedBase: Object3D;
+  goldBase: Object3D;
+  lid: Group;
+  x: number;
+  y: number;
+}
+
 interface UnitView {
   root: Group;
   body: Group;
-  mesh: Mesh;
-  material: MeshStandardMaterial;
+  /** The visible model or placeholder; lunges and bobs relative to `baseY`. */
+  visual: Object3D;
+  baseY: number;
+  materials: MeshStandardMaterial[];
   baseColor: Color;
+  flash: (on: boolean) => void;
+  mixer: AnimationMixer | null;
+  actions: Partial<Record<AnimState, AnimationAction>>;
+  anim: AnimState | null;
+  lastAttackTick: number;
+  /** True from an attack until the unit moves again: it stays turned to its target. */
+  facingTarget: boolean;
+  seenAttackTick: number;
+  attackLeft: number;
   label: Sprite;
   hpBack: Sprite;
   hpFill: Sprite;
@@ -80,15 +131,21 @@ export class RaidCanvas {
   private readonly board = gameData.balance.combat.board;
   private readonly stage = new RoomStage(this.board);
   private readonly shapes = new ShapeCache();
+  private readonly models = sharedModels;
   private readonly textures = new TextureCache();
   private readonly units: Record<number, UnitView> = {};
   private readonly floaters: Record<number, Sprite> = {};
+  private chestView: ChestView | null = null;
+  /** Units that died and are still playing their death animation. */
+  private dying: { view: UnitView; left: number }[] = [];
   private focus: Vec2 = { x: 0, z: 0 };
   private roomKey: string | null = null;
   private playback: RaidPlayback | null = null;
   private speed = 1;
   private paused = false;
   private destroyed = false;
+  /** Skip pressed before the log was loaded (models may still be loading): applied on load. */
+  private skipRequested = false;
   private lastTime: number | null = null;
   private listeners: ((s: PlaybackState) => void)[] = [];
 
@@ -107,14 +164,24 @@ export class RaidCanvas {
     renderer.shadowMap.type = PCFSoftShadowMap;
     this.host.appendChild(renderer.domElement);
     this.renderer = renderer;
+    // Models are optional: anything that fails to load keeps its placeholder.
+    await this.models.load();
+    if (this.destroyed) return;
+    // Layout floors and props (many possible files) are registered now and loaded when needed.
+    this.models.register({ ...builderFiles(), ...propFiles() });
+    this.stage.applyModels(this.models);
     this.placeCamera();
     renderer.setAnimationLoop((time) => this.frame(time));
   }
 
   load(log: readonly RaidEvent[]): void {
+    for (const d of this.dying) this.disposeUnit(d.view);
+    this.dying = [];
     this.playback = new RaidPlayback(log);
     this.paused = false;
     this.playback.advanceTo(0);
+    if (this.skipRequested) this.playback.skipToEnd();
+    this.skipRequested = false;
     this.snapFocus();
     this.sync(0);
     this.emit();
@@ -129,6 +196,7 @@ export class RaidCanvas {
   }
 
   skip(): void {
+    this.skipRequested = true;
     this.playback?.skipToEnd();
     this.sync(0);
     this.emit();
@@ -160,6 +228,29 @@ export class RaidCanvas {
     renderer.forceContextLoss();
     renderer.domElement.remove();
     this.renderer = null;
+  }
+
+  /** Doorways follow the room's doors; its layout (floors, props) replaces the default look. */
+  private showRoom(doors: PlaybackState['doors'], layoutId: string | null): void {
+    this.stage.setDoors(doors);
+    const layout = layoutId ? (gameData.roomLayouts[layoutId] ?? null) : null;
+    if (!layout) {
+      this.stage.setLayout(null);
+      return;
+    }
+    if (this.stage.canShow(layout)) {
+      this.stage.setLayout(layout);
+      return;
+    }
+    this.stage.setLayout(null);
+    const room = this.roomKey;
+    const keys = [
+      ...layout.floors.map((f) => `floor:${f.id}`),
+      ...layout.props.map((p) => `prop:${p.id}`),
+    ];
+    void this.models.load(keys, { animations: false }).then(() => {
+      if (this.roomKey === room && !this.destroyed) this.stage.setLayout(layout);
+    });
   }
 
   private emit(): void {
@@ -207,23 +298,55 @@ export class RaidCanvas {
     if (state.roomKey !== this.roomKey) {
       this.roomKey = state.roomKey;
       this.snapFocus();
+      this.showRoom(state.doors, state.layoutId);
     }
 
     const alive: Record<number, boolean> = {};
+    const byId: Record<number, ViewUnit> = {};
+    for (const u of state.units) byId[u.id] = u;
     for (const u of state.units) {
       alive[u.id] = true;
-      this.updateUnit(this.units[u.id] ?? this.createUnit(u), u, state.tick, dt, time);
+      const faceChest =
+        u.id === 0 && state.chest && state.chest.openedTick !== null
+          ? cellToWorld(state.chest.x, state.chest.y, this.board)
+          : null;
+      const target = u.attackTarget === null ? undefined : byId[u.attackTarget];
+      const faceTarget = cellToWorld(
+        target ? target.x : u.targetX,
+        target ? target.y : u.targetY,
+        this.board,
+      );
+      this.updateUnit(
+        this.units[u.id] ?? this.createUnit(u),
+        u,
+        state.tick,
+        dt,
+        time,
+        faceChest,
+        u.attackTarget === null ? null : faceTarget,
+      );
     }
     for (const [id, view] of Object.entries(this.units)) {
       if (alive[Number(id)]) continue;
-      this.scene.remove(view.root);
-      view.material.dispose();
-      view.label.material.dispose();
-      view.hpBack.material.dispose();
-      view.hpFill.material.dispose();
       delete this.units[Number(id)];
+      if (dt > 0 && view.mixer && view.actions.death) {
+        view.label.visible = false;
+        view.hpBack.visible = false;
+        view.hpFill.visible = false;
+        this.fadeTo(view, 'death');
+        this.dying.push({ view, left: DEATH_SECONDS });
+      } else this.disposeUnit(view);
     }
+    this.dying = this.dying.filter((d) => {
+      const step = dt * this.speed;
+      d.view.mixer?.update(step);
+      d.left -= step;
+      if (d.left > 0) return true;
+      this.disposeUnit(d.view);
+      return false;
+    });
 
+    this.syncChest(state.chest, state.tick);
     this.syncFloaters(state);
 
     const hero = this.heroWorld(state);
@@ -238,19 +361,101 @@ export class RaidCanvas {
     this.placeCamera();
   }
 
+  private disposeUnit(view: UnitView): void {
+    this.scene.remove(view.root);
+    view.mixer?.stopAllAction();
+    view.materials.forEach((m) => m.dispose());
+    view.label.material.dispose();
+    view.hpBack.material.dispose();
+    view.hpFill.material.dispose();
+  }
+
+  /** Cross-fades a unit to an animation state (no-op when already there or the clip is missing). */
+  private fadeTo(view: UnitView, state: AnimState): void {
+    if (view.anim === state) return;
+    const next = view.actions[state];
+    if (!next) return;
+    const prev = view.anim ? view.actions[view.anim] : undefined;
+    next.reset().setEffectiveWeight(1).fadeIn(FADE).play();
+    prev?.fadeOut(FADE);
+    view.anim = state;
+  }
+
+  /** Idle / walk loops plus one-shot attack and death clips (getting hit only flashes the model). */
+  private animate(view: UnitView, u: ViewUnit, tick: number, dt: number): void {
+    const mixer = view.mixer;
+    if (!mixer) return;
+    const sinceAttack = tick - u.attackTick;
+    if (u.attackTick !== view.lastAttackTick && sinceAttack >= 0 && sinceAttack < 3) {
+      view.lastAttackTick = u.attackTick;
+      view.attackLeft = ATTACK_SECONDS;
+      this.fadeTo(view, 'attack');
+    }
+    const step = dt * this.speed;
+    if (view.attackLeft > 0) view.attackLeft -= step;
+    if (view.attackLeft <= 0) this.fadeTo(view, view.moving > 0.5 ? 'move' : 'idle');
+    mixer.update(step);
+  }
+
   private createUnit(u: ViewUnit): UnitView {
-    const shape = this.shapes.get(u.monsterId);
+    const scale = u.elite ? 1.2 : 1;
     const baseColor = new Color(
       u.id === 0 ? COLORS.hero : u.boss ? COLORS.boss : u.elite ? COLORS.elite : COLORS.monster,
     );
-    const material = new MeshStandardMaterial({ color: baseColor, roughness: 0.6 });
-    const mesh = new Mesh(shape.geometry, material);
-    mesh.position.y = shape.height / 2;
-    mesh.castShadow = true;
-    const scale = u.elite ? 1.2 : 1;
-    mesh.scale.setScalar(scale);
+    const modelId = u.id === 0 ? 'hero' : u.monsterId;
+    const model = this.models.create(modelId);
+    let visual: Object3D;
+    let baseY: number;
+    let height: number;
+    let materials: MeshStandardMaterial[];
+    let flash: (on: boolean) => void;
+    let mixer: AnimationMixer | null = null;
+    const actions: Partial<Record<AnimState, AnimationAction>> = {};
+    if (model) {
+      // Models are authored about 2.5 units tall; the board cell is 1 unit.
+      const fit = MODEL_UNIT_HEIGHT / this.models.height(modelId);
+      model.scale.setScalar(fit * scale);
+      visual = model;
+      baseY = 0;
+      height = MODEL_UNIT_HEIGHT * scale;
+      this.models.attachWeapon(model, modelId);
+      mixer = new AnimationMixer(model);
+      for (const state of Object.keys(CLIPS) as AnimState[]) {
+        const clip = this.models.clip(CLIPS[state]);
+        if (!clip) continue;
+        const action = mixer.clipAction(clip);
+        if (state !== 'idle' && state !== 'move') {
+          action.setLoop(LoopOnce, 1);
+          action.clampWhenFinished = true;
+        }
+        actions[state] = action;
+      }
+      materials = [];
+      model.traverse((o) => {
+        const m = (o as Mesh).material as MeshStandardMaterial | undefined;
+        if (m?.isMeshStandardMaterial) materials.push(m);
+      });
+      flash = (on) => {
+        for (const m of materials) {
+          m.emissive.setHex(on ? 0xffffff : 0x000000);
+          m.emissiveIntensity = on ? 0.3 : 0;
+        }
+      };
+    } else {
+      const shape = this.shapes.get(u.monsterId);
+      const material = new MeshStandardMaterial({ color: baseColor, roughness: 0.6 });
+      const mesh = new Mesh(shape.geometry, material);
+      mesh.castShadow = true;
+      mesh.scale.setScalar(scale);
+      visual = mesh;
+      baseY = shape.height / 2;
+      height = shape.height * scale;
+      materials = [material];
+      flash = (on) => material.color.copy(on ? new Color(0xffffff) : baseColor);
+    }
+    visual.position.y = baseY;
     const body = new Group();
-    body.add(mesh);
+    body.add(visual);
     const root = new Group();
     root.add(body);
 
@@ -260,7 +465,7 @@ export class RaidCanvas {
     });
     const label = new Sprite(labelMat);
     label.scale.set(1.1, 0.55, 1);
-    label.position.y = shape.height * scale + 0.55;
+    label.position.y = height + 0.55;
     label.renderOrder = 12;
     const hpBack = new Sprite(new SpriteMaterial({ color: COLORS.hpBack, depthTest: false }));
     const hpFill = new Sprite(new SpriteMaterial({ color: COLORS.hpFill, depthTest: false }));
@@ -269,7 +474,7 @@ export class RaidCanvas {
       [hpFill, 11],
     ] as const) {
       bar.center.set(0, 0.5);
-      bar.position.set(-BAR_WIDTH / 2, shape.height * scale + 0.2, 0);
+      bar.position.set(-BAR_WIDTH / 2, height + 0.2, 0);
       bar.renderOrder = order;
     }
     hpBack.scale.set(BAR_WIDTH, 0.11, 1);
@@ -280,13 +485,22 @@ export class RaidCanvas {
     const view: UnitView = {
       root,
       body,
-      mesh,
-      material,
+      visual,
+      baseY,
+      materials,
       baseColor,
+      flash,
+      mixer,
+      actions,
+      anim: null,
+      lastAttackTick: -1,
+      facingTarget: false,
+      seenAttackTick: -1,
+      attackLeft: 0,
       label,
       hpBack,
       hpFill,
-      height: shape.height,
+      height,
       lastX: w.x,
       lastZ: w.z,
       angle: 0,
@@ -296,7 +510,15 @@ export class RaidCanvas {
     return view;
   }
 
-  private updateUnit(view: UnitView, u: ViewUnit, tick: number, dt: number, time: number): void {
+  private updateUnit(
+    view: UnitView,
+    u: ViewUnit,
+    tick: number,
+    dt: number,
+    time: number,
+    faceChest: Vec2 | null,
+    faceTarget: Vec2 | null,
+  ): void {
     const w = cellToWorld(u.x, u.y, this.board);
     view.root.position.set(w.x, 0, w.z);
     const dx = w.x - view.lastX;
@@ -305,20 +527,83 @@ export class RaidCanvas {
       view.angle +=
         angleDelta(view.angle, facingAngle(dx, dz)) * Math.max(smoothing(dt, 14), dt === 0 ? 1 : 0);
       view.moving = 1;
+      view.facingTarget = false;
     } else {
       view.moving = Math.max(0, view.moving - dt * 6);
+      if (u.attackTick !== view.seenAttackTick) {
+        view.seenAttackTick = u.attackTick;
+        if (faceTarget && u.attackTick >= 0) view.facingTarget = true;
+      }
+      if (view.facingTarget && faceTarget) {
+        // Attacking: stay turned to whatever was attacked.
+        const target = facingAngle(faceTarget.x - w.x, faceTarget.z - w.z);
+        view.angle +=
+          angleDelta(view.angle, target) * Math.max(smoothing(dt, 14), dt === 0 ? 1 : 0);
+      } else if (faceChest) {
+        // Standing in front of the chest: turn to face it.
+        const target = facingAngle(faceChest.x - w.x, faceChest.z - w.z);
+        view.angle +=
+          angleDelta(view.angle, target) * Math.max(smoothing(dt, 10), dt === 0 ? 1 : 0);
+      }
     }
     view.lastX = w.x;
     view.lastZ = w.z;
     view.body.rotation.y = view.angle;
-    view.mesh.position.z = lungeAmount(tick - u.attackTick);
-    view.mesh.position.y = view.height / 2 + Math.abs(Math.sin(time * 11)) * 0.06 * view.moving;
+    // Models play their attack clip; only placeholder shapes lunge.
+    view.visual.position.z = view.mixer ? 0 : lungeAmount(tick - u.attackTick);
+    view.visual.position.y =
+      view.baseY + (view.mixer ? 0 : Math.abs(Math.sin(time * 11)) * 0.06 * view.moving);
 
-    const flash = tick - u.hitTick < 3;
-    view.material.color.copy(flash ? new Color(0xffffff) : view.baseColor);
+    this.animate(view, u, tick, dt);
+    view.flash(tick - u.hitTick < 3);
     const frac = Math.max(0, Math.min(1, u.hp / u.maxHp));
     view.hpFill.scale.set(Math.max(0.001, BAR_WIDTH * frac), 0.11, 1);
     view.hpFill.material.color.setHex(frac < 0.3 ? COLORS.hpLow : COLORS.hpFill);
+  }
+
+  /** The room's chest: a closed one while the hero walks up, the lid swings open with the log. */
+  private syncChest(chest: ViewChest | null, tick: number): void {
+    if (!chest) {
+      if (this.chestView) {
+        this.scene.remove(this.chestView.root);
+        this.chestView = null;
+      }
+      return;
+    }
+    if (!this.chestView || this.chestView.x !== chest.x || this.chestView.y !== chest.y) {
+      if (this.chestView) this.scene.remove(this.chestView.root);
+      this.chestView = this.createChest(chest);
+    }
+    const view = this.chestView;
+    if (!view) return;
+    const t =
+      chest.openedTick === null
+        ? 0
+        : Math.min(1, Math.max(0, (tick - chest.openedTick) / LID_OPEN_TICKS));
+    view.lid.rotation.x = -LID_OPEN_ANGLE * (1 - (1 - t) * (1 - t));
+    // Once the lid is going up the inside is full of gold.
+    view.goldBase.visible = t > 0;
+    view.closedBase.visible = t === 0;
+  }
+
+  private createChest(chest: ViewChest): ChestView | null {
+    const base = this.models.create('prop:chest', false);
+    const gold = this.models.create('prop:chest_gold', false);
+    const lidModel = this.models.create('prop:chest_lid', false);
+    if (!base || !gold || !lidModel) return null;
+    const root = new Group();
+    const lid = new Group();
+    lid.position.set(0, LID_HINGE.y, LID_HINGE.z);
+    lidModel.position.set(0, -LID_HINGE.y, -LID_HINGE.z);
+    lid.add(lidModel);
+    gold.visible = false;
+    root.add(base, gold, lid);
+    // The chest faces south (+z), towards the camera and the cell the hero stands on.
+    const p = cellToWorld(chest.x, chest.y, this.board);
+    root.scale.setScalar(MODEL_SCALE);
+    root.position.set(p.x, 0.03, p.z);
+    this.scene.add(root);
+    return { root, closedBase: base, goldBase: gold, lid, x: chest.x, y: chest.y };
   }
 
   private syncFloaters(state: PlaybackState): void {

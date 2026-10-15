@@ -3,6 +3,9 @@ import { gameData, useGameStore } from '../store/gameStore';
 
 const STAT_ORDER = ['maxHp', 'atk', 'aspd', 'def', 'moveSpeed', 'critChance', 'range'] as const;
 
+/** Only these classes can be picked for now; the others are shown but locked. */
+const UNLOCKED_CLASSES: readonly string[] = ['warrior'];
+
 export function ClassSelectScreen() {
   const startRun = useGameStore((s) => s.startRun);
   return (
@@ -22,7 +25,11 @@ export function ClassSelectScreen() {
                 </li>
               ))}
             </ul>
-            <button onClick={() => startRun(c.id)}>{t('ui.classSelect.pick')}</button>
+            <button disabled={!UNLOCKED_CLASSES.includes(c.id)} onClick={() => startRun(c.id)}>
+              {UNLOCKED_CLASSES.includes(c.id)
+                ? t('ui.classSelect.pick')
+                : t('ui.classSelect.locked')}
+            </button>
           </article>
         ))}
       </div>

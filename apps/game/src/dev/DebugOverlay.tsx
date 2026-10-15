@@ -136,6 +136,24 @@ export function DebugOverlay() {
               {t('debug.telemetry')}
             </button>
             <button onClick={resetRun}>{t('debug.clearSave')}</button>
+            <button
+              onClick={() => window.location.assign('./dev/map')}
+              data-testid="debug-open-map"
+            >
+              {t('debug.openMap')}
+            </button>
+            <button
+              onClick={() => window.location.assign('./dev/rooms')}
+              data-testid="debug-open-rooms"
+            >
+              {t('debug.openRooms')}
+            </button>
+            <button
+              onClick={() => window.location.assign('./dev/models')}
+              data-testid="debug-open-models"
+            >
+              {t('debug.openModels')}
+            </button>
           </div>
         </div>
       ) : (

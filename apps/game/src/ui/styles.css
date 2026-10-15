@@ -407,3 +407,127 @@ button.active {
   background: #14161c;
   transform-origin: center center;
 }
+
+.builder-layout {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.builder-palette {
+  width: 360px;
+  max-height: 680px;
+  overflow-y: auto;
+}
+.builder-pieces {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.builder-pieces button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 92px;
+  font-size: 11px;
+  padding: 3px;
+  overflow-wrap: anywhere;
+}
+.builder-pieces button img {
+  display: block;
+}
+.builder-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.builder-panel {
+  width: 420px;
+  max-height: 680px;
+  overflow-y: auto;
+}
+.builder-panel h3,
+.builder-panel h4 {
+  margin: 6px 0;
+}
+.panel-row {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+.panel-row.buttons {
+  flex-direction: row;
+  gap: 6px;
+}
+.panel-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+.layout-preview {
+  display: block;
+  border: 1px solid #3a4152;
+}
+.issue {
+  margin: 2px 0;
+  font-size: 13px;
+}
+.issue.error {
+  color: #ff7b7b;
+}
+.issue.warning {
+  color: #e9c46a;
+}
+.layout-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.layout-list li {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 0;
+  border-bottom: 1px solid #2a3040;
+}
+.layout-list li.active {
+  background: #1f3a2a;
+}
+.legend {
+  margin: 4px 0;
+}
+
+.menu {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 12vh;
+}
+.menu-title {
+  font-size: 72px;
+  margin: 0 0 48px;
+  letter-spacing: 2px;
+}
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.menu button {
+  font-size: 24px;
+  padding: 12px 56px;
+}
+.menu-credits {
+  text-align: center;
+  font-size: 20px;
+}
+.menu-credits h2 {
+  margin: 0 0 16px;
+}
+.menu-credits a {
+  color: #8fb0ff;
+}
