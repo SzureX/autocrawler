@@ -34,6 +34,8 @@ export function createRun(data: GameData, seed: number, classId: string): RunSta
     upgradeStorage: [],
     lastRaid: null,
     stats: { raids: 0, wins: 0, losses: 0, merges: 0, artifactsFound: 0 },
+    level: 1,
+    xp: 0,
     nextUid: 1,
   };
   return generateTileOffer(data, run);

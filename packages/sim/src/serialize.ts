@@ -33,6 +33,7 @@ const raidSummarySchema = z.object({
   lootArtifacts: z.array(artifactInstanceSchema),
   lootUpgrades: z.array(z.string()),
   livesLost: z.number().int(),
+  xpGained: z.number().int().min(0),
   killer: z.string().nullable().optional(),
 });
 
@@ -67,10 +68,12 @@ export const runStateSchema = z.object({
     merges: z.number().int(),
     artifactsFound: z.number().int(),
   }),
+  level: z.number().int().min(1),
+  xp: z.number().int().min(0),
   nextUid: z.number().int().min(0),
 });
 
-export const CURRENT_SAVE_VERSION = 3;
+export const CURRENT_SAVE_VERSION = 4;
 
 export class RunParseError extends Error {}
 

@@ -5,6 +5,7 @@ import { legalPlacements } from './dungeon';
 import { setPhase } from './phases';
 import { generateBossOffer, generateTileOffer } from './tiles';
 import { applyRaidLoot } from './upgrades';
+import { addXp } from './xp';
 import type { RaidSummary, RunState } from './types';
 
 export function hasBossRoom(run: Pick<RunState, 'dungeon'>): boolean {
@@ -33,6 +34,7 @@ export function resolveRaid(run: RunState, result: RaidResult): RunState {
     lootArtifacts: result.lootArtifacts,
     lootUpgrades: result.lootUpgrades,
     livesLost: result.won ? 0 : 1,
+    xpGained: result.xpGained,
     killer: result.death?.killerMonsterId ?? null,
   };
   const stats = {
@@ -56,10 +58,12 @@ export function resolveRaid(run: RunState, result: RaidResult): RunState {
  * Resolve -> the next phase: Victory (boss defeated), GameOver (no lives),
  * TileOffer (win before the boss), BossOffer (10th win) or Prep (defeat, no tile).
  */
-export function continueRun(data: GameData, run: RunState): RunState {
-  if (run.phase !== 'Resolve') throw new Error(`Cannot continue in phase ${run.phase}`);
-  const raid = run.lastRaid;
+export function continueRun(data: GameData, resolved: RunState): RunState {
+  if (resolved.phase !== 'Resolve') throw new Error(`Cannot continue in phase ${resolved.phase}`);
+  const raid = resolved.lastRaid;
   if (!raid) throw new Error('Resolve phase without a raid summary');
+  // The experience of the raid reaches the hero as the run moves on to Prep.
+  const run: RunState = { ...resolved, ...addXp(data.balance, resolved, raid.xpGained) };
   if (!raid.won) {
     return setPhase(run, run.lives <= 0 ? 'GameOver' : 'Prep');
   }

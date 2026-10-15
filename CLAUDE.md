@@ -171,7 +171,7 @@ final = (base + Σ flat) × (1 + Σ percentAdd) × Π percentMult
 
 **Obrażenia:** `dmg = max(1, atk × 100 / (100 + def))`, krytyk mnoży przez `critMult`. Trafienie: rzut na `accuracy`, potem rzut na krytyk (stała kolejność rzutów).
 
-Bohater **nie ma XP ani poziomów w runie**: moc pochodzi tylko z artefaktów. HP odnawia się do pełna na starcie każdego rajdu, w rajdzie leczą tylko efekty (Świątynia, Fontanna, pasywka Wojownika, lifesteal).
+Bohater ma **poziom (1–10) i EXP**: 10 EXP za każdego zabitego potwora (też w przegranym rajdzie), 50 EXP na poziom, wartości w `balance.heroLevel`. EXP trafia do postaci przy przejściu z Resolve dalej (do Prep), a poziom na razie **nic nie daje** (1 poziom = 1 punkt drzewka umiejętności, patrz niżej). Moc w rajdzie pochodzi z artefaktów. HP odnawia się do pełna na starcie każdego rajdu, w rajdzie leczą tylko efekty (Świątynia, Fontanna, pasywka Wojownika, lifesteal).
 
 ### 6.4 Artefakty, plecak i scalanie
 
@@ -265,6 +265,7 @@ interface RunState {
   upgradeStorage: string[];           // roomUpgradeIds
   lastRaid: RaidSummary | null;
   stats: RunStats;
+  level: number; xp: number;          // poziom bohatera 1..10 i EXP do następnego poziomu
   nextUid: number;                    // licznik deterministycznych id (kafelki, artefakty); dodany w M0
 }
 
@@ -469,7 +470,7 @@ Otwarte decyzje właściciela dotyczące balansu: docs/QUESTIONS.md pkt 1–3.
 
 ## 13. Poza zakresem prototypu (nie implementuj, dopisz do `docs/BACKLOG.md`)
 
-Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby dało się dodać), wiele map, fabuła, multiplayer, kontroler, zapis w chmurze, mobile, humor w opisach, wybór bossa 1 z 3 w UI (dane i `sim` są gotowe, w prototypie jest 1 boss), rotacja/usuwanie/przestawianie pokoi, XP i poziomy bohatera, synergie zestawów artefaktów (tagi są tylko w danych), dźwięk (opcjonalnie w M7), pakowanie Electron/Tauri (po prototypie).
+Meta-progresja i odblokowania (ale `RunState` jest tak zaprojektowany, żeby dało się dodać), wiele map, fabuła, multiplayer, kontroler, zapis w chmurze, mobile, humor w opisach, wybór bossa 1 z 3 w UI (dane i `sim` są gotowe, w prototypie jest 1 boss), rotacja/usuwanie/przestawianie pokoi, synergie zestawów artefaktów (tagi są tylko w danych), dźwięk (opcjonalnie w M7), pakowanie Electron/Tauri (po prototypie).
 
 ---
 

@@ -196,6 +196,12 @@ export const balanceSchema = z.object({
       openTicks: z.number().int().positive(),
     }),
   }),
+  /** The hero's levels: flat experience per level, a fixed amount per kill, a level cap. */
+  heroLevel: z.object({
+    maxLevel: z.number().int().min(1),
+    xpPerLevel: z.number().int().positive(),
+    xpPerKill: z.number().int().min(0),
+  }),
   threat: z.object({ mediumFrom: z.number().positive(), highFrom: z.number().positive() }),
   effects: z.object({
     healOnKillPct: z.number(),

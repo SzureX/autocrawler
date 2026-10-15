@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { hasBossRoom, simulateRaid, type RunState } from '@loch/sim';
+import { addXp, hasBossRoom, simulateRaid, type RunState } from '@loch/sim';
 import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
 import { reducedMotion } from '../view/motion';
@@ -97,6 +97,8 @@ export function RaidScreen({ run }: { run: RunState }) {
   const waveText = hasBossRoom(run)
     ? t('raid.waveBoss')
     : t('raid.wave', { wave: run.wavesWon + 1, max: gameData.balance.wavesToBoss });
+  // What the hero will be after this raid (the experience is applied when the run moves on).
+  const after = addXp(gameData.balance, run, result.xpGained);
   const lootNames = [
     ...result.lootArtifacts.map(
       (a) => `${artifactName(a.artifactId)} (${t('ui.inv.level', { level: a.level })})`,
@@ -130,6 +132,12 @@ export function RaidScreen({ run }: { run: RunState }) {
                 </h2>
                 <p>{t(won ? 'raid.won' : 'raid.lost')}</p>
                 <p data-testid="summary-gold">{t('raid.gold', { gold: 'xxx' })}</p>
+                <p data-testid="summary-xp">
+                  {t('raid.xpGained', { xp: result.xpGained })}
+                  <br />
+                  {t('raid.level', { level: after.level })} ·{' '}
+                  {t('raid.xpBar', { xp: after.xp, max: gameData.balance.heroLevel.xpPerLevel })}
+                </p>
                 {lootNames.length > 0 && (
                   <ul data-testid="summary-loot">
                     {lootNames.map((name, i) => (

@@ -25,3 +25,4 @@ export * from './upgrades';
 export * from './flow';
 export * from './bots';
 export * from './threat';
+export * from './xp';

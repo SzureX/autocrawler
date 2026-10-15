@@ -173,6 +173,8 @@ test('Start flies into the first room, the wave popup shows, and the summary lea
   await page.getByTestId('raid-skip').click();
   await expect(page.getByTestId('raid-summary')).toBeVisible();
   await expect(page.getByTestId('summary-gold')).toContainText('xxx');
+  await expect(page.getByTestId('summary-xp')).toContainText('Zdobyte EXP');
+  await expect(page.getByTestId('summary-xp')).toContainText('/50');
   await shot(page, 'flow-summary-popup');
   await page.getByTestId('summary-continue').click();
   await expect(page.getByTestId('offer-popup')).toBeVisible({ timeout: 30_000 });

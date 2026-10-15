@@ -259,6 +259,7 @@ export function simulateRaid(
     roomsCleared,
     roomsTotal: route.stops.length,
     kills: ctx.kills,
+    xpGained: ctx.kills * data.balance.heroLevel.xpPerKill,
     heroHp: hero.hp,
     heroMaxHp: hero.maxHp,
     death,

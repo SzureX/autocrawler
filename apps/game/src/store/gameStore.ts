@@ -154,6 +154,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       roomsCleared: 0,
       roomsTotal: 0,
       kills: 0,
+      xpGained: 0,
       heroHp: 0,
       heroMaxHp: 0,
       death: null,

@@ -111,6 +111,8 @@ export interface RaidResult {
   roomsCleared: number;
   roomsTotal: number;
   kills: number;
+  /** Experience for the hero: a fixed amount per kill, also in a lost raid. */
+  xpGained: number;
   heroHp: number;
   heroMaxHp: number;
   /** Where and to what the hero died (only when reason is "died"). */

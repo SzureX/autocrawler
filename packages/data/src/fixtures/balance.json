@@ -1,5 +1,6 @@
 {
   "startLives": 5,
+  "heroLevel": { "maxLevel": 10, "xpPerLevel": 50, "xpPerKill": 10 },
   "wavesToBoss": 10,
   "grid": {
     "width": 9,

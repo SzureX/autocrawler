@@ -82,6 +82,8 @@ export interface RaidSummary {
   lootArtifacts: ArtifactInstance[];
   lootUpgrades: string[];
   livesLost: number;
+  /** Experience earned in the raid (it reaches the hero when the run moves on to Prep). */
+  xpGained: number;
   /** Monster id that killed the hero (null when the hero survived or died to the environment). */
   killer?: string | null;
 }
@@ -102,6 +104,9 @@ export interface RunState {
   upgradeStorage: string[];
   lastRaid: RaidSummary | null;
   stats: RunStats;
+  /** Hero level (1..max) and experience towards the next level (a full bar at the cap). */
+  level: number;
+  xp: number;
   /** Counter used to mint unique ids (tiles, artifacts). Keeps ids deterministic. */
   nextUid: number;
 }
