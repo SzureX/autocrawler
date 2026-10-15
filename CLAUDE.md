@@ -137,7 +137,7 @@ ClassSelect → TileOffer → Prep → Action → Resolve ─┬→ TileOffer   
                                                    └→ Victory          (Boss pokonany)
 ```
 
-- **ClassSelect:** wybór 1 z 3 klas. Loch dostaje **pokój nr 1** (Komnata, wszystkie 4 drzwi) na środku siatki (4,4).
+- **ClassSelect:** wybór 1 z 3 klas. Loch dostaje **pokój nr 1** (Komnata, jedne drzwi na wschodzie) na środku lewej krawędzi siatki (0,4).
 - **TileOffer:** gracz widzi **3 kafelki** (typ pokoju, drzwi, skład potworów) i **wybiera 1**. Reszta znika. Wybrany trafia do `hand`.
 - **BossOffer:** po 10. wygranej oferta bossów. W prototypie jest **1 boss**, więc kafelek trafia do `hand` automatycznie. Kod ma obsługiwać wybór 1 z N (lista w danych), żeby wybór 1 z 3 dało się włączyć później bez zmian w `sim`.
 - **Prep:** **budowa jest obowiązkowa, gdy `hand` nie jest pusta**: przycisk Start jest nieaktywny, dopóki kafelek nie zostanie postawiony. Nie można go odłożyć. W Prep gracz też zakłada/zdejmuje artefakty, scala artefakty i przypisuje ulepszenia pokoi.
@@ -152,10 +152,10 @@ ClassSelect → TileOffer → Prep → Action → Resolve ─┬→ TileOffer   
 - Siatka **9×9**, limit **15 pokoi** (bez Bossa) jako zabezpieczenie (przy 11 możliwych pokojach nie powinien zadziałać).
 - Kafelek 1×1 z **maską drzwi** (`Dir[]` z `N`,`E`,`S`,`W`). **Bez rotacji, bez usuwania i przestawiania** pokoi.
 - **Poprawne położenie kafelka** `p`: komórka pusta i w siatce, sąsiaduje (4 kierunki) z ≥ 1 pokojem `r`, przy czym **`r` ma drzwi w stronę `p` ORAZ kafelek ma drzwi w stronę `r`**. Pokój łączy się ze **wszystkimi** sąsiadami spełniającymi ten warunek (mogą powstać cykle).
-- **Gwarancja braku soft locka:** generator ofert musi zapewnić, że **każdy oferowany kafelek ma ≥ 1 legalne położenie**. Jeśli nie ma, losuj maskę drzwi ponownie (do 20 razy), potem użyj maski z 4 drzwiami.
-- Maska drzwi kafelka: 2 drzwi (50%), 3 (35%), 4 (15%). Kafelek Bossa ma 4 drzwi, ale boss jest ślepym zaułkiem trasy.
+- **Loch to jednokierunkowy łańcuch (zmiana z 2026-10-15):** każdy kafelek ma **dokładnie 2 drzwi**: wejście (zwrócone ku wyjściu poprzedniego pokoju) i wyjście na N, E lub S, **nigdy na W** (nie ma cofania do poprzedniej kolumny). Każdy kafelek ma więc dokładnie 1 legalne położenie (pole za wyjściem ostatniego pokoju). Generator wybiera tylko takie wyjścia, przy których da się jeszcze dobudować łańcuch do Bossa (`packages/sim/src/chain.ts`), więc soft lock nie występuje. Kafelek Bossa ma **tylko wejście**.
 - **Wyjątek dla Bossa w zamkniętym lochu (dodany w M7, stan faktyczny w kodzie):** jeśli żadne drzwi w lochu nie prowadzą do wolnego pola (zdarzało się ok. 1 raz na 10 000 runów botów), kafelek Bossa może stanąć na dowolnym pustym polu sąsiadującym (4 kierunki) ze zwykłym pokojem, a ten pokój (pierwszy w kolejności N,E,S,W) dostaje drzwi w stronę Bossa. Bez tego run byłby niewygrywalny. Zwykły kafelek bez legalnego położenia (praktycznie niemożliwe) można odrzucić przyciskiem „Odrzuć kafelek” (`discardUnplaceableTile`); Bossa odrzucić nie można. **Decyzja właściciela: OTWARTA** (docs/QUESTIONS.md pkt 4; szczegóły w docs/DECISIONS.md).
-- **Trasa rajdu:** DFS (preorder, kolejność sąsiadów N,E,S,W) po pokojach niebędących Bossem, od pokoju nr 1. Przejścia między kolejnymi pokojami idą najkrótszą ścieżką po grafie (cofanie przez oczyszczone pokoje liczy się do czasu). Na końcu najkrótsza ścieżka do Bossa. Trasa jest funkcją czystą z testami na ≥ 20 układach.
+- **Trasa rajdu:** DFS (w łańcuchu to po prostu kolejność budowy) (preorder, kolejność sąsiadów N,E,S,W) po pokojach niebędących Bossem, od pokoju nr 1. Przejścia między kolejnymi pokojami idą najkrótszą ścieżką po grafie (cofanie przez oczyszczone pokoje liczy się do czasu). Na końcu najkrótsza ścieżka do Bossa. Trasa jest funkcją czystą z testami na ≥ 20 układach.
+- **Układ pokoju (floors + props)** robi się w edytorze `/dev/rooms` → „Buduj pokój” (tylko DEV) i zapisuje w `packages/data/src/json/roomLayouts.json`: typ pokoju, układ **normalny** (pasuje do każdego pokoju tego typu) albo **konkretny** (tylko dla dokładnie tego zestawu drzwi), podłogi, przedmioty i `blocked`, czyli komórki zablokowane przez przedmioty (potwory i bohater tam nie wchodzą ani nie pojawiają się; ściany stawiają się same z drzwi pokoju). Przy tworzeniu kafelka (też pokoju startowego i Bossa) `pickLayoutId` losuje po równo spośród układów normalnych tego typu i konkretnych dla jego drzwi i zapisuje `layoutId`; brak pasującego układu = dotychczasowy wygląd. Wejście i wyjście pokoju oraz widok rysują doorway tylko na bokach z drzwiami (`RoomEnter.doors`).
 - **Skład potworów** jest losowany **raz, przy tworzeniu kafelka** (seed z `runSeed` + `tile.uid`) i potem **stały**. Gracz widzi go przy wyborze kafelka i w **tooltipie** nad pokojem (ikony × liczba, elita oznaczona). Statystyki potworów skalują się z `dungeonLevel` w momencie startu rajdu, a skład się nie zmienia.
 - Potwory **respawnują się przy każdym rajdzie** (też po porażce), bohater też.
 
@@ -171,7 +171,7 @@ final = (base + Σ flat) × (1 + Σ percentAdd) × Π percentMult
 
 **Obrażenia:** `dmg = max(1, atk × 100 / (100 + def))`, krytyk mnoży przez `critMult`. Trafienie: rzut na `accuracy`, potem rzut na krytyk (stała kolejność rzutów).
 
-Bohater **nie ma XP ani poziomów w runie**: moc pochodzi tylko z artefaktów. HP odnawia się do pełna na starcie każdego rajdu, w rajdzie leczą tylko efekty (Sanktuarium, Fontanna, pasywka Wojownika, lifesteal).
+Bohater **nie ma XP ani poziomów w runie**: moc pochodzi tylko z artefaktów. HP odnawia się do pełna na starcie każdego rajdu, w rajdzie leczą tylko efekty (Świątynia, Fontanna, pasywka Wojownika, lifesteal).
 
 ### 6.4 Artefakty, plecak i scalanie
 
@@ -243,7 +243,8 @@ interface ArtifactInstance { uid: string; artifactId: string; level: 1 | 2 | 3; 
 interface SpawnSpec { monsterId: string; elite: boolean; }
 
 interface RoomTile { uid: string; roomTypeId: string; doors: Dir[]; spawns: SpawnSpec[];
-                     isBoss: boolean; bossId?: string; }
+                     isBoss: boolean; bossId?: string;
+                     layoutId?: string; }   // układ pokoju z edytora, losowany raz przy tworzeniu kafelka
 
 interface RoomInstance extends RoomTile { pos: { x: number; y: number }; order: number; upgradeId: string | null; }
 
@@ -270,7 +271,7 @@ interface RunState {
 // RaidSummary: { won, reason, ticks, roomsCleared, lootArtifacts, lootUpgrades, livesLost, killer? }
 ```
 
-Dane (`packages/data`): `classes`, `artifacts`, `roomTypes`, `monsters`, `bosses`, `roomUpgrades`, `balance` (tabela skalowania, wagi, zakresy dropów). Wszystko po `id` w `snake_case`, nazwy i opisy jako **klucze i18n** (`nameKey`, `descKey`). Loader sprawdza unikalność `id` i istnienie wszystkich referencji (test).
+Dane (`packages/data`): `classes`, `artifacts`, `roomTypes`, `monsters`, `bosses`, `roomUpgrades`, `roomLayouts` (układy pokoi z edytora, patrz 6.2), `balance` (tabela skalowania, wagi, zakresy dropów). Wszystko po `id` w `snake_case`, nazwy i opisy jako **klucze i18n** (`nameKey`, `descKey`). Loader sprawdza unikalność `id` i istnienie wszystkich referencji (test).
 
 API `sim` (funkcje czyste, `RunState → RunState`): `createRun(seed, classId)`, `generateTileOffer`, `chooseTile`, `legalPlacements`, `placeTile`, `equip`, `unequip`, `mergeArtifacts`, `assignUpgrade`, `startRaid`, `simulateRaid`, `resolveRaid`, `computeHeroStats`, `computeRaidRoute`.
 
@@ -304,7 +305,7 @@ API `sim` (funkcje czyste, `RunState → RunState`): `createRun(seed, classId)`,
 
 **Elita:** HP ×2.5, ATK ×1.5, waga dropu ×3. Wagi wyboru potworu w Komnacie: `rat` 30, `skeleton` 35, `archer` 20, `brute` 15.
 
-### 8.3 Typy pokoi (5 + Boss)
+### 8.3 Typy pokoi (5 + Boss; zmiana z 2026-10-15)
 
 Wagi w ofercie kafelków: Komnata 40, pozostałe po 15. W ofercie 3 kafelków typy różne, jeśli się da. *(Tabela bez zmian po strojeniu.)*
 
@@ -312,9 +313,9 @@ Wagi w ofercie kafelków: Komnata 40, pozostałe po 15. W ofercie 3 kafelków ty
 |---|---|---|
 | `chamber` (Komnata) | bazowa liczba z 6.7 | brak |
 | `elite_room` (Pokój elity) | 1 elitarny potwór | waga dropu ×3 (z reguły elity) |
-| `treasury` (Skarbiec) | bazowa − 1 (min. 1) | waga dropu potworów ×2, 50% szansy na +1 artefakt po oczyszczeniu |
-| `trap_room` (Pułapka) | bazowa − 1 (min. 1) | `onEnter`: 20% maxHP obrażeń (nie zabija, zostawia ≥ 1 HP), `onClear`: gwarantowane +1 ulepszenie pokoju |
-| `sanctuary` (Sanktuarium) | bazowa − 1 (min. 1) | `onEnter`: leczy 30% maxHP |
+| `chest` (Skrzynia, dawniej Skarbiec) | brak potworów | w pokoju stoi skrzynia (komórka (4,2), frontem na południe); bohater podchodzi do jej frontu (komórka (4,3)), otwiera ją (20 tików) i dostaje **1 losowy artefakt** (rzadkość wg poziomu lochu) |
+| `trap_room` (Pułapka) | brak potworów na kafelku | **losowane przy każdym rajdzie od nowa**: 50% to pokój ze skrzynią (jak `chest`), 50% to walka z 1 zwykłym potworem; nie rani już bohatera i nie daje ulepszenia pokoju |
+| `temple` (Świątynia, dawniej Sanktuarium) | brak potworów | `onEnter`: leczy 30% maxHP, bohater idzie dalej |
 | `boss_room` | Boss | tylko dla Bossa |
 
 ### 8.4 Artefakty (15: 10 statystyk + 5 efektów)
@@ -412,7 +413,7 @@ Każdy milestone kończy się: zielonym `pnpm check`, raportem (sekcja 2) i aktu
 - **Gotowe, gdy:** 1000 rajdów headless bez zawieszenia i **bez timeoutu**, ten sam seed → identyczny hash logu, testy poszczególnych mechanik (zasięg, cooldown, AoE Maga, lifesteal, odbicie, faza Bossa), `tools/simulate.ts` działa.
 
 ### M4: Loot i ulepszenia pokoi
-- Pre-roll dropów (4–6 artefaktów, 1–2 ulepszenia) i przypisanie potworom, wagi rzadkości z 6.6, 8 ulepszeń pokoi, `assignUpgrade` (wymiana wraca do magazynu), efekty `onClear` (Pułapka, Skarbiec, Kowadło).
+- Pre-roll dropów (4–6 artefaktów, 1–2 ulepszenia) i przypisanie potworom, wagi rzadkości z 6.6, 8 ulepszeń pokoi, `assignUpgrade` (wymiana wraca do magazynu), efekty `onClear` (Kowadło, Brama) oraz skrzynie (Skrzynia, Pułapka).
 - **Gotowe, gdy:** testy rozkładu dropów (liczba, rzadkość względem poziomu), ulepszenie zmienia przebieg rajdu przy tym samym seedzie, zginięcie bohatera gubi dropy niezabitych potworów.
 
 ### M5: Run i progresja (cały run w `sim`, bez ładnego UI)
