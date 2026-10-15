@@ -24,6 +24,12 @@ export function MainMenu({ canContinue, onContinue, onNewGame }: MainMenuProps) 
               www.kaylousberg.com
             </a>
           </p>
+          <p>
+            {t('menu.credits.ui')}{' '}
+            <a href="https://www.kenney.nl" target="_blank" rel="noreferrer">
+              www.kenney.nl
+            </a>
+          </p>
           <button onClick={() => setCredits(false)} data-testid="menu-back">
             {t('menu.back')}
           </button>
