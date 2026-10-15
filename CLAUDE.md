@@ -138,9 +138,9 @@ ClassSelect → TileOffer → Prep → Action → Resolve ─┬→ TileOffer   
 ```
 
 - **ClassSelect:** wybór 1 z 3 klas. Loch dostaje **pokój nr 1** (Komnata, jedne drzwi na wschodzie) na środku lewej krawędzi siatki (0,4).
-- **TileOffer:** gracz widzi **3 kafelki** (typ pokoju, drzwi, skład potworów) i **wybiera 1**. Reszta znika. Wybrany trafia do `hand`.
-- **BossOffer:** po 10. wygranej oferta bossów. W prototypie jest **1 boss**, więc kafelek trafia do `hand` automatycznie. Kod ma obsługiwać wybór 1 z N (lista w danych), żeby wybór 1 z 3 dało się włączyć później bez zmian w `sim`.
-- **Prep:** **budowa jest obowiązkowa, gdy `hand` nie jest pusta**: przycisk Start jest nieaktywny, dopóki kafelek nie zostanie postawiony. Nie można go odłożyć. W Prep gracz też zakłada/zdejmuje artefakty, scala artefakty i przypisuje ulepszenia pokoi.
+- **TileOffer:** na mapie otwiera się popup z **3 kartami** (model pokoju, nazwa, opis, skład potworów); gracz **wybiera 1**, reszta znika. Wybrany kafelek leci na swoje miejsce na mapie i **stawia się od razu** (ma jedno legalne położenie). Gdy go nie ma albo jest wiele (Boss w zamkniętym lochu), kafelek trafia do `hand`.
+- **BossOffer:** po 10. wygranej oferta bossów, w prototypie z **1 kartą** (ten sam popup); wybrany Boss stawia się automatycznie. Kod ma obsługiwać wybór 1 z N (lista w danych), żeby wybór 1 z 3 dało się włączyć później bez zmian w `sim`.
+- **Prep:** zwykle `hand` jest pusta (kafelek stawia się sam po wyborze). **Gdy `hand` nie jest pusta** (wyjątki powyżej), przycisk Start jest nieaktywny, dopóki kafelek nie zostanie postawiony ręcznie; nie można go odłożyć. W Prep gracz też zakłada/zdejmuje artefakty, scala artefakty i przypisuje ulepszenia pokoi.
 - **Action:** rajd. Gracz może tylko zmieniać prędkość (1×/2×/4×) i klikać „Pomiń”. Brak innej interakcji (**czysty autobattler**).
 - **Resolve:** podsumowanie (loot, wynik). Wygrana: `wavesWon++`. Porażka: `lives--`.
 - **Po porażce gracz NIE dostaje kafelka** i wraca do Prep na tym samym lochu (budowa pomijana, bo `hand` jest pusta). Loot zebrany przed śmiercią **zostaje**.
@@ -365,8 +365,8 @@ Waga dropu w obrębie rzadkości: równa. Tagi (`tank`, `blade`, `swift`, `vampi
 - **Styl do końca M6:** placeholdery (kolorowe kształty + emoji). Sprite'y podmieniane przez manifest `assets` bez zmian w logice. Referencje klimatu: Backpack Hero, Slay the Spire, Dungeon Clawler.
 - **Ekrany:**
   1. **Wybór klasy**: 3 karty ze statystykami i cechą.
-  2. **Oferta kafelków / bossa**: 3 kafelki z typem, drzwiami i listą potworów widoczną od razu.
-  3. **Prep** (główny ekran): siatka lochu 9×9 (React/DOM) z podglądem „ducha” i podświetleniem legalnych pozycji, kafelek z `hand`, plecak (stosy z licznikiem), 9 slotów, magazyn ulepszeń, panel statystyk z różnicą przed/po (zielone/czerwone), przycisk „Scal”, przycisk Start. **Tooltip nad pokojem:** typ, potwory (ikony × liczba, elita oznaczona), ulepszenie.
+  2. **Oferta kafelków / bossa**: popup na środku mapy z 3 kartami (żywy model pokoju, nazwa, opis, potwory); wybrany pokój leci na mapę i ląduje z hukiem.
+  3. **Prep** (główny ekran): mapa lochu jako scena 3D (pokoje wyglądają jak w rajdzie, wspólne ściany i drzwi, kamera 48° dopasowana do całego lochu, nieodkryte pola pod mgłą z siatką, `DungeonMapCanvas`), z przezroczystą warstwą DOM do klikania i przeciągania; kafelek z `hand` (tylko wyjątki), plecak (stosy z licznikiem), 9 slotów, magazyn ulepszeń, panel statystyk z różnicą przed/po (zielone/czerwone), przycisk „Scal”, przycisk Start. **Tooltip nad pokojem:** typ, potwory (ikony × liczba, elita oznaczona), ulepszenie.
   4. **Rajd**: płótno Three.js (pokój w 3D, kamera podąża za bohaterem, placeholdery z brył), HUD: HP, nazwa pokoju, przyciski 1×/2×/4×/Pomiń, krótki log zdarzeń.
   5. **Podsumowanie rajdu**: wynik, lista lootu, utracone życie.
   6. **Victory / GameOver**: statystyki runu, przycisk „Nowy run”.
