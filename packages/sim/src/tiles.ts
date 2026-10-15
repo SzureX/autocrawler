@@ -1,26 +1,13 @@
 import type { GameData, RoomTypeDef } from '@loch/data';
-import { legalPlacements } from './dungeon';
-import { DIRS, canonicalDoors } from './grid';
+import { FORWARD_DIRS, feasibleExits, nextSlot, takenCells, tilesLeft } from './chain';
+import { canonicalDoors } from './grid';
 import { dungeonLevel } from './level';
 import { setPhase } from './phases';
 import { createRng, type Rng } from './rng';
+import { pickLayoutId } from './layouts';
 import { generateSpawns } from './spawns';
 import { mintUid } from './uid';
 import type { Dir, RoomTile, RunState } from './types';
-
-/** Door count 2/3/4 by balance weights, then a uniformly random set of that many doors. */
-function rollDoors(data: GameData, rng: Rng): Dir[] {
-  const w = data.balance.tileOffer.doorCountWeights;
-  const weights: Record<number, number> = { 2: w['2'], 3: w['3'], 4: w['4'] };
-  const count = rng.weighted([2, 3, 4], (n) => weights[n] ?? 0);
-  const pool: Dir[] = [...DIRS];
-  const chosen: Dir[] = [];
-  for (let i = 0; i < count; i++) {
-    const [dir] = pool.splice(rng.int(0, pool.length - 1), 1);
-    if (dir) chosen.push(dir);
-  }
-  return canonicalDoors(chosen);
-}
 
 function bossRoomType(data: GameData): RoomTypeDef {
   const type = Object.values(data.roomTypes).find((r) => r.isBoss);
@@ -29,8 +16,9 @@ function bossRoomType(data: GameData): RoomTypeDef {
 }
 
 /**
- * Creates one tile. Guarantees at least one legal placement on the current dungeon:
- * the door mask is re-rolled up to `maxMaskRerolls` times, then a 4-door mask is used.
+ * Creates one tile with exactly two doors: the entrance (facing the chain's open exit) and an
+ * exit that is never west and always leaves the chain completable. Because the chain's next slot
+ * is fixed, the tile always has exactly one legal placement.
  */
 function generateTile(
   data: GameData,
@@ -42,26 +30,51 @@ function generateTile(
   const spawnRng = createRng(run.seed).fork(`spawns:${minted.uid}`);
   const spawns = generateSpawns(data, spawnRng, roomType, dungeonLevel(run));
 
-  let doors = rollDoors(data, rng);
-  const maxRerolls = data.balance.tileOffer.maxMaskRerolls;
-  for (let i = 0; i < maxRerolls; i++) {
-    if (legalPlacements(data, run.dungeon, { doors, isBoss: false }).length > 0) break;
-    doors = rollDoors(data, rng);
-  }
-  if (legalPlacements(data, run.dungeon, { doors, isBoss: false }).length === 0) {
-    doors = [...DIRS];
-  }
-  const tile: RoomTile = { uid: minted.uid, roomTypeId: roomType.id, doors, spawns, isBoss: false };
+  const slot = nextSlot(data, run.dungeon);
+  if (!slot) throw new Error('The chain has no free slot for the next tile');
+  const exits = feasibleExits(
+    data,
+    slot.cell,
+    slot.entrance,
+    tilesLeft(data, run.dungeon),
+    takenCells(run.dungeon),
+  );
+  // Unreachable while the chain is feasible; fall back to any forward exit rather than crash.
+  const options = exits.length > 0 ? exits : FORWARD_DIRS.filter((d) => d !== slot.entrance);
+  const exit = options[rng.int(0, options.length - 1)] ?? 'E';
+  const doors = canonicalDoors([slot.entrance, exit]);
+  const layoutId = pickLayoutId(
+    data,
+    createRng(run.seed).fork(`layout:${minted.uid}`),
+    roomType.id,
+    doors,
+  );
+  const tile: RoomTile = {
+    uid: minted.uid,
+    roomTypeId: roomType.id,
+    doors,
+    spawns,
+    isBoss: false,
+    ...(layoutId ? { layoutId } : {}),
+  };
   return { tile, run: minted.run };
 }
 
-/** Creates the first room's tile data (used by createRun): a Chamber with all four doors. */
+/** Creates the first room's tile data (used by createRun): a Chamber with a single east door. */
 export function createStartTile(data: GameData, seed: number): RoomTile {
   const chamber = data.roomTypes['chamber'];
   if (!chamber) throw new Error('Missing chamber room type');
   const uid = 'tile-0';
   const spawns = generateSpawns(data, createRng(seed).fork(`spawns:${uid}`), chamber, 1);
-  return { uid, roomTypeId: chamber.id, doors: [...DIRS], spawns, isBoss: false };
+  const layoutId = pickLayoutId(data, createRng(seed).fork(`layout:${uid}`), chamber.id, ['E']);
+  return {
+    uid,
+    roomTypeId: chamber.id,
+    doors: ['E'],
+    spawns,
+    isBoss: false,
+    ...(layoutId ? { layoutId } : {}),
+  };
 }
 
 /** Offers `tileOffer.count` tiles of different room types (when enough types exist). */
@@ -81,21 +94,30 @@ export function generateTileOffer(data: GameData, run: RunState): RunState {
   return { ...cur, tileOffer: offer };
 }
 
-/** Boss tiles: one per boss in the data (the prototype ships one). All have 4 doors. */
+/** Boss tiles: one per boss in the data (the prototype ships one). Entrance only, no exit. */
 export function generateBossOffer(data: GameData, run: RunState): RunState {
   const type = bossRoomType(data);
+  const slot = nextSlot(data, run.dungeon);
+  const doors: Dir[] = slot ? [slot.entrance] : ['W'];
   let cur = run;
   const offer: RoomTile[] = [];
   for (const boss of Object.values(data.bosses)) {
     const minted = mintUid(cur, 'tile');
     cur = minted.run;
+    const layoutId = pickLayoutId(
+      data,
+      createRng(run.seed).fork(`layout:${minted.uid}`),
+      type.id,
+      doors,
+    );
     offer.push({
       uid: minted.uid,
       roomTypeId: type.id,
-      doors: [...DIRS],
+      doors: [...doors],
       spawns: [],
       isBoss: true,
       bossId: boss.id,
+      ...(layoutId ? { layoutId } : {}),
     });
   }
   return { ...cur, tileOffer: offer };

@@ -9,6 +9,14 @@ export function rollBaseCount(data: GameData, rng: Rng, level: number): number {
   return rng.int(min, max);
 }
 
+/** A random ordinary monster for a dungeon level (weights from the data, minimum level respected). */
+export function pickMonsterId(data: GameData, rng: Rng, level: number): string {
+  const pool = Object.values(data.monsters).filter(
+    (m) => m.minLevel <= level && m.chamberWeight > 0,
+  );
+  return rng.weighted(pool, (m) => m.chamberWeight).id;
+}
+
 /**
  * Monster composition of a tile. Rolled once when the tile is created and then fixed.
  * Boss rooms have no regular spawns (the boss is added by the combat simulation).
@@ -19,11 +27,8 @@ export function generateSpawns(
   roomType: RoomTypeDef,
   level: number,
 ): SpawnSpec[] {
-  if (roomType.spawnMode === 'boss') return [];
-  const pool = Object.values(data.monsters).filter(
-    (m) => m.minLevel <= level && m.chamberWeight > 0,
-  );
-  const pickMonster = (): string => rng.weighted(pool, (m) => m.chamberWeight).id;
+  if (roomType.spawnMode === 'boss' || roomType.spawnMode === 'none') return [];
+  const pickMonster = (): string => pickMonsterId(data, rng, level);
 
   if (roomType.spawnMode === 'single_elite') {
     return [{ monsterId: pickMonster(), elite: true }];

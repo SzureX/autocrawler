@@ -6,7 +6,7 @@ export interface Cell {
 }
 
 export type DamageKind = 'attack' | 'splash' | 'reflect' | 'trap';
-export type HealSource = 'lifesteal' | 'kill' | 'sanctuary' | 'fountain';
+export type HealSource = 'lifesteal' | 'kill' | 'temple' | 'fountain';
 export type RaidEndReason = 'cleared' | 'died' | 'timeout';
 
 /** Item revealed when a monster dies or a room is cleared (filled in by the loot system). */
@@ -42,6 +42,12 @@ export type RaidEvent =
       duration: number;
       /** Direction the hero walked to get here (null for the first room). */
       from: Dir | null;
+      /** Cell of the room's chest in this raid (it faces south), or null when there is none. */
+      chest: Cell | null;
+      /** Room layout (floors and props) the view draws, or null for the default look. */
+      layoutId: string | null;
+      /** Sides of the room that have a door (the view draws a doorway only there). */
+      doors: Dir[];
     }
   | {
       type: 'Spawn';
@@ -87,6 +93,7 @@ export type RaidEvent =
     }
   | { type: 'Death'; tick: number; unit: number; killer: number }
   | { type: 'PhaseChange'; tick: number; unit: number; phase: number }
+  | { type: 'ChestOpen'; tick: number; cell: Cell }
   | { type: 'RoomCleared'; tick: number; roomKey: string }
   | { type: 'LootDropped'; tick: number; unit: number | null; item: LootItem }
   | { type: 'RaidEnd'; tick: number; won: boolean; reason: RaidEndReason };

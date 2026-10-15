@@ -8,6 +8,7 @@ import roomTypesJson from './fixtures/roomTypes.json';
 import monstersJson from './fixtures/monsters.json';
 import bossesJson from './fixtures/bosses.json';
 import roomUpgradesJson from './fixtures/roomUpgrades.json';
+import roomLayoutsJson from './fixtures/roomLayouts.json';
 
 /**
  * The original values from CLAUDE.md section 8, frozen. Mechanic tests use these so that
@@ -24,5 +25,6 @@ export function loadSpecGameData(): GameData {
     monsters: monstersJson,
     bosses: bossesJson,
     roomUpgrades: roomUpgradesJson,
+    roomLayouts: roomLayoutsJson,
   });
 }

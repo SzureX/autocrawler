@@ -90,7 +90,12 @@
       "width": 9,
       "height": 7
     },
-    "retargetTicks": 10
+    "retargetTicks": 10,
+    "chest": {
+      "x": 4,
+      "y": 2,
+      "openTicks": 20
+    }
   },
   "effects": {
     "healOnKillPct": 0.03,

@@ -2,6 +2,7 @@ import type { GameData } from '@loch/data';
 import { planDrops, type DropSpec } from '../loot';
 import { createRng } from '../rng';
 import type { RaidRoute } from '../route';
+import { pickMonsterId } from '../spawns';
 import type { RunState, SpawnSpec } from '../types';
 import { roomMods } from './units';
 
@@ -10,6 +11,8 @@ export interface RoomPlan {
   specs: SpawnSpec[];
   /** Drops carried by each monster, parallel to `specs`. */
   drops: (DropSpec[] | undefined)[];
+  /** Artifacts waiting in the room's chest this raid (0 = no chest). */
+  chestItems: number;
 }
 
 /**
@@ -24,6 +27,7 @@ export function planRaid(
   level: number,
 ): Record<string, RoomPlan> {
   const extraRng = createRng(run.seed).fork('extra', attempt);
+  const outcomeRng = createRng(run.seed).fork('outcome', attempt);
   const plans: Record<string, RoomPlan> = {};
   const weights: number[] = [];
   const owners: { key: string; index: number }[] = [];
@@ -33,12 +37,25 @@ export function planRaid(
     if (!room) continue;
     const type = data.roomTypes[room.roomTypeId];
     const mods = roomMods(room.upgradeId ? data.roomUpgrades[room.upgradeId] : undefined);
-    const specs = room.spawns.map((s) => ({ ...s }));
+    let specs = room.spawns.map((s) => ({ ...s }));
+    let chestItems = 0;
+    for (const e of type?.onEnter ?? []) if (e.kind === 'chestLoot') chestItems += e.count;
+    // Rooms like the Trap are decided anew in every raid: a chest or a fight.
+    if (type?.outcome) {
+      if (outcomeRng.chance(type.outcome.chestChance)) {
+        chestItems = type.outcome.chestItems;
+      } else {
+        specs = [];
+        for (let i = 0; i < type.outcome.monsters; i++) {
+          specs.push({ monsterId: pickMonsterId(data, outcomeRng, level), elite: false });
+        }
+      }
+    }
     for (let i = 0; i < mods.extraMonsters && specs.length > 0; i++) {
       const copy = specs[extraRng.int(0, specs.length - 1)];
       if (copy) specs.push({ ...copy });
     }
-    plans[key] = { specs, drops: specs.map(() => undefined) };
+    plans[key] = { specs, drops: specs.map(() => undefined), chestItems };
     specs.forEach((spec, index) => {
       const w =
         data.balance.monsterDropWeight *

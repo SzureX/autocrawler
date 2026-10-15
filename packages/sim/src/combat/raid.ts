@@ -72,6 +72,7 @@ export function simulateRaid(
     lastHitBy: {},
     names: {},
     unitDrops: {},
+    blocked: {},
     loot: { artifacts: [], upgrades: [], nextUid: run.nextUid },
   };
   const plans = planRaid(data, run, attempt, route, level);
@@ -96,6 +97,8 @@ export function simulateRaid(
     exit: Cell | null,
     duration: number,
     from: Dir | null,
+    chest: Cell | null = null,
+    layoutId: string | null = null,
   ): void => {
     const room = run.dungeon.rooms[key];
     if (!room) throw new Error(`Route points at a missing room: ${key}`);
@@ -110,6 +113,9 @@ export function simulateRaid(
       exit,
       duration,
       from,
+      chest,
+      layoutId,
+      doors: [...room.doors],
     });
   };
 
@@ -154,10 +160,12 @@ export function simulateRaid(
     if (!room) throw new Error(`Missing room ${stopKey}`);
     const type: RoomTypeDef | undefined = data.roomTypes[room.roomTypeId];
     if (!type) throw new Error(`Unknown room type ${room.roomTypeId}`);
-    enterRoom(stopKey, entry, false, null, travelled, from);
+    const plan = plans[stopKey];
+    const chestItems = plan?.chestItems ?? 0;
+    const chestCell = chestItems > 0 ? { x: combat.chest.x, y: combat.chest.y } : null;
+    enterRoom(stopKey, entry, false, null, travelled, from, chestCell, room.layoutId ?? null);
 
     const mods = roomMods(room.upgradeId ? data.roomUpgrades[room.upgradeId] : undefined);
-    const plan = plans[stopKey];
     const outcome = fightRoom(
       ctx,
       room,
@@ -166,6 +174,7 @@ export function simulateRaid(
       entry,
       plan?.specs ?? room.spawns,
       plan?.drops ?? [],
+      chestItems,
     );
     if (outcome === 'cleared') {
       roomsCleared++;

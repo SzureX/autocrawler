@@ -32,6 +32,8 @@ export interface RaidContext {
   names: Record<number, string>;
   /** Drops carried by living monsters, by unit id. */
   unitDrops: Record<number, DropSpec[]>;
+  /** Cells of the current room that props block (units cannot enter them). */
+  blocked: Record<string, boolean>;
   /** Loot collected so far; artifact uids continue the run's counter. */
   loot: { artifacts: ArtifactInstance[]; upgrades: string[]; nextUid: number };
 }

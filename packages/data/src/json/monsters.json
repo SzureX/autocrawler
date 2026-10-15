@@ -5,7 +5,7 @@
     "icon": "🐀",
     "ai": "melee",
     "keepDistance": 0,
-    "chamberWeight": 30,
+    "chamberWeight": 0,
     "minLevel": 1,
     "stats": {
       "maxHp": 16,
@@ -45,7 +45,7 @@
     "icon": "🏹",
     "ai": "ranged",
     "keepDistance": 3,
-    "chamberWeight": 20,
+    "chamberWeight": 0,
     "minLevel": 1,
     "stats": {
       "maxHp": 24,
@@ -65,7 +65,7 @@
     "icon": "👹",
     "ai": "melee",
     "keepDistance": 0,
-    "chamberWeight": 15,
+    "chamberWeight": 0,
     "minLevel": 3,
     "stats": {
       "maxHp": 80,

@@ -14,7 +14,7 @@ function describe(e: RaidEvent): string {
     case 'RaidStart':
       return `RaidStart hp=${e.heroMaxHp} level=${e.dungeonLevel} route=${e.route.join(' > ')}`;
     case 'RoomEnter':
-      return `RoomEnter ${e.roomKey} ${e.roomTypeId}${e.transit ? ' (transit)' : ''} walk=${e.duration}`;
+      return `RoomEnter ${e.roomKey} ${e.roomTypeId}${e.transit ? ' (transit)' : ''} walk=${e.duration}${e.chest ? ' chest' : ''}`;
     case 'Spawn':
       return `Spawn #${e.unit} ${e.monsterId}${e.elite ? '*' : ''}${e.summoned ? ' (summoned)' : ''} hp=${e.maxHp} at ${e.x},${e.y}`;
     case 'Move':
@@ -29,6 +29,8 @@ function describe(e: RaidEvent): string {
       return `Death #${e.unit} killer=#${e.killer}`;
     case 'PhaseChange':
       return `PhaseChange #${e.unit} -> ${e.phase}`;
+    case 'ChestOpen':
+      return `ChestOpen ${e.cell.x},${e.cell.y}`;
     case 'RoomCleared':
       return `RoomCleared ${e.roomKey}`;
     case 'LootDropped':

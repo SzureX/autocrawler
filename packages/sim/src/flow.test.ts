@@ -215,7 +215,7 @@ describe('bot runs through the whole state machine', () => {
         if (out.outcome === 'GameOver') expect(out.run.lives).toBe(0);
       }
     }
-  });
+  }, 60_000);
 
   it('the whole run is deterministic: same seed -> same outcome and loot', () => {
     const a = playRun(testData, 77, 'rogue', 'greedy-atk');

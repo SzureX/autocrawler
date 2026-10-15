@@ -452,39 +452,93 @@ describe('class and artifact effects', () => {
 });
 
 describe('room effects', () => {
-  it('a trap deals 20% max HP on entry but never kills', () => {
-    const { data, run } = scenario({
-      rooms: [{ x: 4, y: 4, roomTypeId: 'trap_room', spawns: [rat] }],
-    });
-    const trap = events(simulateRaid(data, run).log, 'Damage').find((e) => e.kind === 'trap');
-    expect(trap?.amount).toBeCloseTo(24, 5); // 20% of 120
-    expect(trap?.source).toBe(-1);
-    const lethal = scenario({
-      data: cloneData((d) => {
-        const t = d.roomTypes['trap_room'];
-        if (t) t.onEnter = [{ kind: 'damagePctMaxHp', value: 5 }];
-      }),
-      rooms: [{ x: 4, y: 4, roomTypeId: 'trap_room', spawns: [rat] }],
-    });
-    const log = simulateRaid(lethal.data, lethal.run).log;
-    const t2 = events(log, 'Damage').find((e) => e.kind === 'trap');
-    expect(t2?.hp).toBe(1);
-  });
-
-  it('a sanctuary heals 30% max HP on entry', () => {
-    // Fight in the first room, arrive hurt in the sanctuary.
+  it('a temple holds no monsters and heals 30% max HP on entry', () => {
+    // Fight in the first room, arrive hurt in the temple.
     const { data, run } = scenario({
       data: exact(),
       rooms: [
         { x: 4, y: 4, doors: ['E'], spawns: [skeleton, rat] },
-        { x: 5, y: 4, doors: ['W'], roomTypeId: 'sanctuary', spawns: [rat] },
+        { x: 5, y: 4, doors: ['W'], roomTypeId: 'temple' },
       ],
     });
     const log = simulateRaid(data, run).log;
-    const heal = events(log, 'Heal').find((e) => e.source === 'sanctuary');
+    const heal = events(log, 'Heal').find((e) => e.source === 'temple');
     expect(heal).toBeDefined();
     expect(heal?.amount).toBeGreaterThan(0);
     expect(heal?.amount).toBeLessThanOrEqual(36 + 1e-9);
+    const enter = events(log, 'RoomEnter').filter((e) => e.roomKey === '5,4' && !e.transit);
+    expect(enter).toHaveLength(1);
+    expect(enter[0]?.chest).toBeNull();
+    // No monster is ever spawned in the temple.
+    expect(events(log, 'Spawn').every((e) => e.tick < (enter[0]?.tick ?? 0))).toBe(true);
+  });
+
+  it('the hero walks to the front of the chest, opens it and leaves', () => {
+    const { data, run } = scenario({
+      rooms: [
+        { x: 4, y: 4, doors: ['E'], roomTypeId: 'chest' },
+        { x: 5, y: 4, doors: ['W'], spawns: [rat] },
+      ],
+    });
+    const result = simulateRaid(data, run);
+    expect(result.won).toBe(true);
+    const log = result.log;
+    const { chest } = data.balance.combat;
+    const enter = events(log, 'RoomEnter').find((e) => !e.transit);
+    expect(enter?.chest).toEqual({ x: chest.x, y: chest.y });
+    const open = events(log, 'ChestOpen');
+    expect(open).toHaveLength(1);
+    expect(open[0]?.cell).toEqual({ x: chest.x, y: chest.y });
+    // The last step of the walk ends one cell below the chest (its front faces south).
+    const moves = events(log, 'Move').filter(
+      (e) => e.unit === 0 && e.tick >= (enter?.tick ?? 0) && e.tick < (open[0]?.tick ?? 0),
+    );
+    expect(moves.length).toBeGreaterThan(0);
+    expect(moves.at(-1)?.to).toEqual({ x: chest.x, y: chest.y + 1 });
+    // The hero never steps onto the chest cell.
+    expect(moves.some((m) => m.to.x === chest.x && m.to.y === chest.y)).toBe(false);
+    // The walk takes real time, and the lid takes openTicks.
+    const walkTicks = moves.reduce((sum, m) => sum + m.duration, 0);
+    expect((open[0]?.tick ?? 0) - (enter?.tick ?? 0)).toBe(walkTicks);
+    const cleared = log.find((e) => e.type === 'RoomCleared' && e.roomKey === '4,4');
+    expect(cleared?.tick).toBe((open[0]?.tick ?? 0) + chest.openTicks);
+  });
+
+  it('a trap is decided anew in every raid: a chest or a fight with one monster', () => {
+    let chests = 0;
+    let fights = 0;
+    const n = 200;
+    for (let attempt = 0; attempt < n; attempt++) {
+      const { data, run } = scenario({
+        seed: 5,
+        rooms: [{ x: 4, y: 4, roomTypeId: 'trap_room' }],
+      });
+      const log = simulateRaid(data, run, { attempt }).log;
+      const enter = events(log, 'RoomEnter').find((e) => !e.transit);
+      const spawns = events(log, 'Spawn');
+      if (enter?.chest) {
+        chests++;
+        expect(spawns).toHaveLength(0);
+        expect(events(log, 'ChestOpen')).toHaveLength(1);
+      } else {
+        fights++;
+        expect(spawns).toHaveLength(1);
+        expect(spawns[0]?.elite).toBe(false);
+        expect(events(log, 'ChestOpen')).toHaveLength(0);
+      }
+      // A trap no longer hurts the hero by itself.
+      expect(events(log, 'Damage').some((e) => e.kind === 'trap')).toBe(false);
+    }
+    expect(chests / n).toBeGreaterThan(0.4);
+    expect(chests / n).toBeLessThan(0.6);
+    expect(chests + fights).toBe(n);
+  });
+
+  it('the trap roll is reproducible for the same seed and raid attempt', () => {
+    const { data, run } = scenario({ seed: 9, rooms: [{ x: 4, y: 4, roomTypeId: 'trap_room' }] });
+    const a = simulateRaid(data, run, { attempt: 3 });
+    const b = simulateRaid(data, run, { attempt: 3 });
+    expect(hashRaidLog(a.log)).toBe(hashRaidLog(b.log));
   });
 
   it('a room with upgrades: fountain heals after clearing, torches speed up the hero', () => {
@@ -669,7 +723,7 @@ describe('robustness', () => {
     }
     expect(timeouts).toBe(0);
     expect(wins).toBeGreaterThan(0);
-  });
+  }, 60_000);
 });
 
 import { randomBuild } from '../testing';

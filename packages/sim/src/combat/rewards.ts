@@ -24,6 +24,14 @@ function giveDrop(ctx: RaidContext, drop: DropSpec, unit: number | null): void {
   }
 }
 
+/** The chest of a room: random artifacts straight into the loot (rarity from the dungeon level). */
+export function grantChestLoot(ctx: RaidContext, items: number): void {
+  for (let i = 0; i < items; i++) {
+    const artifactId = rollArtifact(ctx.data, ctx.rewardRng, ctx.level);
+    giveDrop(ctx, { kind: 'artifact', artifactId }, null);
+  }
+}
+
 /** A killed monster hands over everything it carried (drops of unkilled monsters are lost). */
 export function collectDrops(ctx: RaidContext, monster: Unit): void {
   const drops = ctx.unitDrops[monster.id];
@@ -32,7 +40,7 @@ export function collectDrops(ctx: RaidContext, monster: Unit): void {
   delete ctx.unitDrops[monster.id];
 }
 
-/** Rewards for clearing a room: room type effects and upgrades (Treasury, Trap, Anvil, Gate). */
+/** Rewards for clearing a room: room type effects and upgrades (Anvil, Gate, ...). */
 export function grantClearRewards(ctx: RaidContext, type: RoomTypeDef, mods: RoomMods): void {
   const { data, rewardRng } = ctx;
   for (const e of type.onClear) {

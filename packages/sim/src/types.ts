@@ -44,6 +44,8 @@ export interface RoomTile {
   spawns: SpawnSpec[];
   isBoss: boolean;
   bossId?: string;
+  /** Room layout made in the room builder, fixed when the tile is created (none = default look). */
+  layoutId?: string;
 }
 
 export interface Pos {

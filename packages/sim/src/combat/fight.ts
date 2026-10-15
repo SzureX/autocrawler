@@ -2,7 +2,9 @@ import type { RoomTypeDef } from '@loch/data';
 import type { DropSpec } from '../loot';
 import type { RoomInstance, SpawnSpec } from '../types';
 import { cheb, findRetreat, findStep, inBoard } from './board';
+import { visitChest } from './chest';
 import { emit, type RaidContext } from './context';
+import { blockedCells } from '../layouts';
 import { collectDrops, grantClearRewards } from './rewards';
 import {
   cooldownTicksFor,
@@ -26,6 +28,7 @@ interface RoomState {
 export type RoomOutcome = 'cleared' | 'died' | 'timeout';
 
 function occupied(ctx: RaidContext, rs: RoomState, x: number, y: number): boolean {
+  if (ctx.blocked[`${x},${y}`]) return true;
   if (ctx.hero.alive && ctx.hero.x === x && ctx.hero.y === y) return true;
   for (const m of rs.monsters) if (m.alive && m.x === x && m.y === y) return true;
   return false;
@@ -89,6 +92,7 @@ function spawnMonsters(
     candidates.length = 0;
     for (let y = 0; y < board.height; y++) {
       for (let x = 0; x < board.width; x++) {
+        if (ctx.blocked[`${x},${y}`]) continue;
         if (cheb({ x, y }, hero) >= min) candidates.push({ x, y });
       }
     }
@@ -128,7 +132,8 @@ function spawnMonsters(
     const def = data.bosses[rs.room.bossId];
     if (!def) throw new Error(`Unknown boss: ${rs.room.bossId}`);
     const center = { x: Math.floor(board.width / 2), y: Math.floor(board.height / 2) };
-    const cell = cheb(center, hero) >= 1 ? center : take();
+    const free = cheb(center, hero) >= 1 && !ctx.blocked[`${center.x},${center.y}`];
+    const cell = free ? center : take();
     add(makeBossUnit(scaling, ctx.nextUnitId++, def, cell), false);
   }
 }
@@ -141,7 +146,7 @@ function applyRoomEffects(ctx: RaidContext, effects: RoomTypeDef['onEnter']): vo
       const amount = round2(Math.min(hero.maxHp * e.value, hero.hp - 1));
       if (amount > 0) dealDamage(ctx, hero, amount, ENVIRONMENT, 'trap', false);
     } else if (e.kind === 'healPctMaxHp') {
-      heal(ctx, hero, hero.maxHp * e.value, 'sanctuary');
+      heal(ctx, hero, hero.maxHp * e.value, 'temple');
     }
   }
 }
@@ -367,6 +372,7 @@ export function fightRoom(
   entry: Cell,
   specs: readonly SpawnSpec[],
   drops: readonly (DropSpec[] | undefined)[],
+  chestItems: number,
 ): RoomOutcome {
   const hero = ctx.hero;
   hero.x = entry.x;
@@ -377,10 +383,12 @@ export function fightRoom(
   hero.cooldownTicks = cooldownTicksFor(ctx.data.balance.combat.tickRate, hero.aspd);
   hero.accuracy = ctx.heroBase.accuracy * mods.accuracyMult;
 
+  ctx.blocked = blockedCells(ctx.data, room.layoutId);
   const rs: RoomState = { room, type, mods, monsters: [], firstAttackDone: false };
   const scaling: ScalingContext = { data: ctx.data, levelMult: ctx.levelMult, mods };
   spawnMonsters(ctx, rs, scaling, specs, drops);
   applyRoomEffects(ctx, type.onEnter);
+  if (chestItems > 0 && !visitChest(ctx, chestItems)) return 'timeout';
 
   const cleared = (): boolean => rs.monsters.every((m) => !m.alive);
   const finishRoom = (): RoomOutcome => {

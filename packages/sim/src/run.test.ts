@@ -20,9 +20,9 @@ describe('createRun', () => {
     expect(run.lives).toBe(5);
     expect(run.wavesWon).toBe(0);
     expect(run.equipped).toHaveLength(9);
-    expect(Object.keys(run.dungeon.rooms)).toEqual(['4,4']);
-    expect(run.dungeon.rooms['4,4']?.doors).toEqual(['N', 'E', 'S', 'W']);
-    expect(run.dungeon.startKey).toBe('4,4');
+    expect(Object.keys(run.dungeon.rooms)).toEqual(['0,4']);
+    expect(run.dungeon.rooms['0,4']?.doors).toEqual(['E']);
+    expect(run.dungeon.startKey).toBe('0,4');
   });
 
   it('rejects unknown classes', () => {

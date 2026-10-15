@@ -5,6 +5,8 @@ export * from './level';
 export * from './uid';
 export * from './phases';
 export * from './spawns';
+export * from './chain';
+export * from './layouts';
 export * from './dungeon';
 export * from './tiles';
 export * from './route';

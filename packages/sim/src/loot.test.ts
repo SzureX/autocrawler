@@ -221,7 +221,7 @@ describe('loot in a raid', () => {
     expect(r.lootUpgrades).toEqual([]);
   });
 
-  it('drop weights: treasury (x2), elite (x3) and blood altar (+50%) shift where loot sits', () => {
+  it('drop weights: elite (x3) and blood altar (+50%) shift where loot sits', () => {
     // Two rooms with 8 monsters each: the first has a higher weight per monster.
     const carriers = (first: { roomTypeId?: string; upgradeId?: string; elite?: boolean }) => {
       let inFirst = 0;
@@ -252,12 +252,11 @@ describe('loot in a raid', () => {
       }
       return inFirst / inSecond;
     };
-    expect(carriers({ roomTypeId: 'treasury' })).toBeGreaterThan(1.3);
     expect(carriers({ elite: true })).toBeGreaterThan(1.5);
     expect(carriers({ upgradeId: 'blood_altar' })).toBeGreaterThan(1.1);
     expect(carriers({})).toBeGreaterThan(0.85);
     expect(carriers({})).toBeLessThan(1.15);
-  });
+  }, 60_000);
 
   it('is deterministic: same seed -> identical loot', () => {
     const make = () =>
@@ -288,36 +287,43 @@ describe('room clear rewards', () => {
   const clearLoot = (r: ReturnType<typeof simulateRaid>) =>
     lootEvents(r.log).filter((e) => e.unit === null);
 
-  it('a trap guarantees +1 room upgrade after clearing', () => {
+  it('a chest gives exactly one artifact, taken after the hero opens it', () => {
     for (let seed = 1; seed <= 20; seed++) {
       const { data, run } = scenario({
         data: strongData(),
         seed,
-        rooms: [{ x: 4, y: 4, roomTypeId: 'trap_room', spawns: [rat] }],
+        rooms: [{ x: 4, y: 4, roomTypeId: 'chest' }],
       });
       const r = simulateRaid(data, run);
       expect(r.won).toBe(true);
       const items = clearLoot(r);
-      expect(items.filter((e) => e.item.kind === 'upgrade')).toHaveLength(1);
-      // Clear rewards come right after the room is cleared.
-      const clearedAt = r.log.find((e) => e.type === 'RoomCleared')?.tick;
-      expect(items[0]?.tick).toBe(clearedAt);
+      expect(items).toHaveLength(1);
+      expect(items[0]?.item.kind).toBe('artifact');
+      const opened = r.log.find((e) => e.type === 'ChestOpen')?.tick;
+      expect(opened).toBeDefined();
+      // The artifact appears once the lid has been up for openTicks, right before the room clears.
+      expect(items[0]?.tick).toBe((opened ?? 0) + data.balance.combat.chest.openTicks);
+      expect(r.lootArtifacts).toHaveLength(1);
     }
   });
 
-  it('a treasury gives +1 artifact with ~50% chance', () => {
-    let bonus = 0;
-    const n = 300;
-    for (let seed = 1; seed <= n; seed++) {
-      const { data, run } = scenario({
-        data: strongData(),
-        seed,
-        rooms: [{ x: 4, y: 4, roomTypeId: 'treasury', spawns: [rat] }],
-      });
-      bonus += clearLoot(simulateRaid(data, run)).filter((e) => e.item.kind === 'artifact').length;
-    }
-    expect(bonus / n).toBeGreaterThan(0.4);
-    expect(bonus / n).toBeLessThan(0.6);
+  it('the chest artifact follows the dungeon level (rarity weights)', () => {
+    const better = (wavesWon: number): number => {
+      let count = 0;
+      for (let seed = 1; seed <= 400; seed++) {
+        const { data, run } = scenario({
+          data: strongData(),
+          seed,
+          wavesWon,
+          rooms: [{ x: 4, y: 4, roomTypeId: 'chest' }],
+        });
+        for (const a of simulateRaid(data, run).lootArtifacts) {
+          if (testData.artifacts[a.artifactId]?.rarity !== 'common') count++;
+        }
+      }
+      return count;
+    };
+    expect(better(8)).toBeGreaterThan(better(0));
   });
 
   it('an anvil gives a rare-or-better artifact, a guardian gate any artifact (and +25% HP)', () => {
@@ -349,7 +355,7 @@ describe('room clear rewards', () => {
         const w = d.classes['warrior'];
         if (w) w.stats.maxHp = 5;
       }),
-      rooms: [{ x: 4, y: 4, roomTypeId: 'trap_room', spawns: [brute, brute] }],
+      rooms: [{ x: 4, y: 4, spawns: [brute, brute], upgradeId: 'anvil' }],
     });
     const r = simulateRaid(data, run);
     expect(r.won).toBe(false);

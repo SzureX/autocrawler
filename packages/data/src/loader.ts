@@ -6,6 +6,7 @@ import {
   classSchema,
   metaSchema,
   monsterSchema,
+  roomLayoutSchema,
   roomTypeSchema,
   roomUpgradeSchema,
   type GameData,
@@ -18,6 +19,7 @@ import roomTypesJson from './json/roomTypes.json';
 import monstersJson from './json/monsters.json';
 import bossesJson from './json/bosses.json';
 import roomUpgradesJson from './json/roomUpgrades.json';
+import roomLayoutsJson from './json/roomLayouts.json';
 
 export interface RawGameData {
   meta: unknown;
@@ -28,6 +30,7 @@ export interface RawGameData {
   monsters: unknown;
   bosses: unknown;
   roomUpgrades: unknown;
+  roomLayouts: unknown;
 }
 
 export class DataValidationError extends Error {}
@@ -72,6 +75,10 @@ export function parseGameData(raw: RawGameData): GameData {
       parseWith(z.array(roomUpgradeSchema), raw.roomUpgrades, 'roomUpgrades'),
       'roomUpgrade',
     ),
+    roomLayouts: toRecord(
+      parseWith(z.array(roomLayoutSchema), raw.roomLayouts, 'roomLayouts'),
+      'roomLayout',
+    ),
   };
 
   const maxLevel = data.balance.wavesToBoss + 1;
@@ -97,6 +104,21 @@ export function parseGameData(raw: RawGameData): GameData {
     throw new DataValidationError('Missing chamber room type');
   }
   if (Object.keys(data.bosses).length === 0) throw new DataValidationError('No bosses defined');
+  const { board } = data.balance.combat;
+  for (const layout of Object.values(data.roomLayouts)) {
+    if (!(layout.roomTypeId in data.roomTypes)) {
+      throw new DataValidationError(
+        `roomLayout ${layout.id}: unknown room type ${layout.roomTypeId}`,
+      );
+    }
+    for (const [x, y] of layout.blocked) {
+      if (x >= board.width || y >= board.height) {
+        throw new DataValidationError(
+          `roomLayout ${layout.id}: blocked cell ${x},${y} is off the board`,
+        );
+      }
+    }
+  }
   return data;
 }
 
@@ -111,6 +133,7 @@ export function loadGameData(): GameData {
     monsters: monstersJson,
     bosses: bossesJson,
     roomUpgrades: roomUpgradesJson,
+    roomLayouts: roomLayoutsJson,
   });
 }
 

@@ -4,12 +4,12 @@ import { generateTileOffer, createStartTile } from './tiles';
 import { EQUIP_SLOTS, type RoomInstance, type RunState } from './types';
 
 /**
- * Creates a fresh run: the chosen class, starting room #1 (a chamber with all four
- * doors) in the middle of the grid, and the first tile offer.
+ * Creates a fresh run: the chosen class, starting room #1 (a chamber with one east
+ * door) in the middle of the left edge, and the first tile offer.
  */
 export function createRun(data: GameData, seed: number, classId: string): RunState {
   if (!(classId in data.classes)) throw new Error(`Unknown class: ${classId}`);
-  const cx = Math.floor(data.balance.grid.width / 2);
+  const cx = 0;
   const cy = Math.floor(data.balance.grid.height / 2);
   const startKey = gridKey(cx, cy);
   const start: RoomInstance = {

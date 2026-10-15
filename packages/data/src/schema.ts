@@ -103,6 +103,8 @@ export const roomEffectSchema = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('damagePctMaxHp'), value: z.number().positive() }),
   z.object({ kind: z.literal('healPctMaxHp'), value: z.number().positive() }),
   z.object({ kind: z.literal('grantRoomUpgrade'), count: z.number().int().positive() }),
+  /** The hero walks to the room's chest and takes `count` random artifacts. */
+  z.object({ kind: z.literal('chestLoot'), count: z.number().int().positive() }),
   z.object({
     kind: z.literal('bonusArtifactChance'),
     chance: z.number().min(0).max(1),
@@ -117,10 +119,21 @@ export const roomTypeSchema = z.object({
   descKey: z.string(),
   icon: z.string(),
   offerWeight: z.number().min(0),
-  spawnMode: z.enum(['base', 'base_minus_1', 'single_elite', 'boss']),
+  spawnMode: z.enum(['none', 'base', 'base_minus_1', 'single_elite', 'boss']),
   dropWeightMult: z.number().positive(),
   onEnter: z.array(roomEffectSchema),
   onClear: z.array(roomEffectSchema),
+  /**
+   * Rolled again at the start of every raid: with `chestChance` the room holds a chest with
+   * `chestItems` artifacts, otherwise it is a fight against `monsters` ordinary monsters.
+   */
+  outcome: z
+    .object({
+      chestChance: z.number().min(0).max(1),
+      chestItems: z.number().int().positive(),
+      monsters: z.number().int().positive(),
+    })
+    .optional(),
   isBoss: z.boolean(),
 });
 export type RoomTypeDef = z.infer<typeof roomTypeSchema>;
@@ -176,6 +189,12 @@ export const balanceSchema = z.object({
     tickLimit: z.number().int().positive(),
     board: z.object({ width: z.number().int().positive(), height: z.number().int().positive() }),
     retargetTicks: z.number().int().positive(),
+    /** Chest cell (the front faces south, the hero stands one cell below) and opening time. */
+    chest: z.object({
+      x: z.number().int().min(0),
+      y: z.number().int().min(0),
+      openTicks: z.number().int().positive(),
+    }),
   }),
   threat: z.object({ mediumFrom: z.number().positive(), highFrom: z.number().positive() }),
   effects: z.object({
@@ -184,6 +203,41 @@ export const balanceSchema = z.object({
   }),
 });
 export type Balance = z.infer<typeof balanceSchema>;
+
+/** Floor piece of a room layout: `x,y` is the top-left cell, `rot` quarter turns. */
+export const floorPieceSchema = z.object({
+  id: z.string().min(1),
+  x: z.number().int().min(0),
+  y: z.number().int().min(0),
+  rot: z.number().int().min(0).max(3),
+});
+export type FloorPieceDef = z.infer<typeof floorPieceSchema>;
+
+/** Prop of a room layout: world position in cells on a half-cell grid, `rot` in eighth turns. */
+export const propPieceSchema = z.object({
+  id: z.string().min(1),
+  x: z.number(),
+  z: z.number(),
+  rot: z.number().int().min(0).max(7),
+  y: z.number().optional(),
+});
+export type PropPieceDef = z.infer<typeof propPieceSchema>;
+
+/**
+ * A room layout made in the room builder: floors and props for one room type. `doors` null means
+ * "normal" (fits any room of the type); otherwise the layout is only used by rooms whose doors are
+ * exactly that set. `blocked` lists the board cells the props occupy (units cannot enter them).
+ */
+export const roomLayoutSchema = z.object({
+  id,
+  name: z.string().min(1),
+  roomTypeId: z.string().min(1),
+  doors: z.array(dirSchema).nullable(),
+  floors: z.array(floorPieceSchema),
+  props: z.array(propPieceSchema),
+  blocked: z.array(z.tuple([z.number().int().min(0), z.number().int().min(0)])),
+});
+export type RoomLayoutDef = z.infer<typeof roomLayoutSchema>;
 
 export const metaSchema = z.object({ gameName: z.string(), saveVersion: z.number().int() });
 export type Meta = z.infer<typeof metaSchema>;
@@ -197,4 +251,5 @@ export interface GameData {
   monsters: Record<string, MonsterDef>;
   bosses: Record<string, BossDef>;
   roomUpgrades: Record<string, RoomUpgradeDef>;
+  roomLayouts: Record<string, RoomLayoutDef>;
 }

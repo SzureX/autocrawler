@@ -15,6 +15,7 @@ const roomTileShape = {
   spawns: z.array(z.object({ monsterId: z.string(), elite: z.boolean() })),
   isBoss: z.boolean(),
   bossId: z.string().optional(),
+  layoutId: z.string().optional(),
 };
 const roomTileSchema = z.object(roomTileShape);
 const roomInstanceSchema = z.object({
@@ -69,7 +70,7 @@ export const runStateSchema = z.object({
   nextUid: z.number().int().min(0),
 });
 
-export const CURRENT_SAVE_VERSION = 1;
+export const CURRENT_SAVE_VERSION = 3;
 
 export class RunParseError extends Error {}
 

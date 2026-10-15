@@ -7,6 +7,7 @@ import roomTypesJson from './json/roomTypes.json';
 import monstersJson from './json/monsters.json';
 import bossesJson from './json/bosses.json';
 import roomUpgradesJson from './json/roomUpgrades.json';
+import roomLayoutsJson from './json/roomLayouts.json';
 import { DataValidationError, loadGameData, parseGameData, type RawGameData } from './loader';
 
 const raw = (): RawGameData =>
@@ -19,6 +20,7 @@ const raw = (): RawGameData =>
     monsters: monstersJson,
     bosses: bossesJson,
     roomUpgrades: roomUpgradesJson,
+    roomLayouts: roomLayoutsJson,
   });
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -57,5 +59,40 @@ describe('game data', () => {
     const r = raw();
     (r.balance as { artifactDrops: unknown[] }).artifactDrops = [];
     expect(() => parseGameData(r)).toThrow(/artifactDrops/);
+  });
+
+  describe('room layouts', () => {
+    const layout = (over: Record<string, unknown> = {}) => ({
+      id: 'chamber_normal_1',
+      name: 'Test',
+      roomTypeId: 'chamber',
+      doors: null,
+      floors: [{ id: 'tile_small', x: 0, y: 0, rot: 0 }],
+      props: [{ id: 'barrel_large', x: 1, z: 1, rot: 3 }],
+      blocked: [[1, 1]],
+      ...over,
+    });
+    const withLayouts = (layouts: unknown[]) => {
+      const r = raw();
+      r.roomLayouts = layouts;
+      return r;
+    };
+
+    it('accepts a valid layout, normal or for exact doors', () => {
+      const d = parseGameData(
+        withLayouts([layout(), layout({ id: 'chamber_we_1', doors: ['E', 'W'] })]),
+      );
+      expect(Object.keys(d.roomLayouts)).toEqual(['chamber_normal_1', 'chamber_we_1']);
+    });
+
+    it('rejects an unknown room type, a blocked cell off the board and duplicate ids', () => {
+      expect(() => parseGameData(withLayouts([layout({ roomTypeId: 'nope' })]))).toThrow(
+        /unknown room type/,
+      );
+      expect(() => parseGameData(withLayouts([layout({ blocked: [[9, 0]] })]))).toThrow(
+        /off the board/,
+      );
+      expect(() => parseGameData(withLayouts([layout(), layout()]))).toThrow(/Duplicate/);
+    });
   });
 });
