@@ -181,3 +181,39 @@ test('Start flies into the first room, the wave popup shows, and the summary lea
   await shot(page, 'flow-back-on-map');
   expect(errors).toEqual([]);
 });
+
+test('the skill tree: points from levels, linked nodes unlock one after another', async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await page.goto('/?seed=5');
+  await page.getByTestId('menu-new-game').click();
+  await startAndBuild(page);
+  // No level yet, so no points and no badge.
+  await expect(page.getByTestId('skills-badge')).toHaveCount(0);
+  for (let i = 0; i < 3; i++) await page.getByTestId('debug-add-level').click();
+  await expect(page.getByTestId('skills-badge')).toHaveText('3');
+  await page.getByTestId('skills-open').click();
+  await expect(page.getByTestId('skills-points')).toContainText('3');
+  await expect(page.getByTestId('skill-node-u37')).toHaveAttribute('data-tone', 'root');
+  await expect(page.getByTestId('skill-node-u40')).toHaveAttribute('data-tone', 'locked');
+  // A locked node cannot be bought.
+  await page.getByTestId('skill-node-u40').click();
+  await expect(page.getByTestId('skill-buy')).toBeDisabled();
+  await expect(page.getByTestId('skill-block')).toContainText('Najpierw');
+  await shot(page, 'skills-tree');
+  // Buy the root, then the node above it.
+  await page.getByTestId('skill-node-u37').click();
+  await page.getByTestId('skill-buy').click();
+  await expect(page.getByTestId('skill-node-u37')).toHaveAttribute('data-level', '1');
+  await expect(page.getByTestId('skills-points')).toContainText('2');
+  await expect(page.getByTestId('skill-node-u40')).toHaveAttribute('data-tone', 'open');
+  await page.getByTestId('skill-node-u40').click();
+  await page.getByTestId('skill-buy').click();
+  await expect(page.getByTestId('skill-node-u40')).toHaveAttribute('data-level', '1');
+  await expect(page.getByTestId('skills-points')).toContainText('1');
+  await shot(page, 'skills-tree-bought');
+  await page.getByTestId('skills-close').click();
+  await expect(page.getByTestId('skills-badge')).toHaveText('1');
+  expect(errors).toEqual([]);
+});

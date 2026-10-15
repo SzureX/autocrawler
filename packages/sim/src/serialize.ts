@@ -70,10 +70,11 @@ export const runStateSchema = z.object({
   }),
   level: z.number().int().min(1),
   xp: z.number().int().min(0),
+  skills: z.record(z.string(), z.number().int().min(1)),
   nextUid: z.number().int().min(0),
 });
 
-export const CURRENT_SAVE_VERSION = 4;
+export const CURRENT_SAVE_VERSION = 5;
 
 export class RunParseError extends Error {}
 

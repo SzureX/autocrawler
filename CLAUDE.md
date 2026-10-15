@@ -140,6 +140,7 @@ ClassSelect → TileOffer → Prep → Action → Resolve ─┬→ TileOffer   
 - **ClassSelect:** wybór 1 z 3 klas. Loch dostaje **pokój nr 1** (Komnata, drzwi na wschodzie jako wyjście i na zachodzie jako wejście bohatera) na środku lewej krawędzi siatki (0,4).
 - **TileOffer:** na mapie otwiera się popup z **3 kartami** (model pokoju, nazwa, opis, skład potworów); gracz **wybiera 1**, reszta znika. Wybrany kafelek leci na swoje miejsce na mapie i **stawia się od razu** (ma jedno legalne położenie). Gdy go nie ma albo jest wiele (Boss w zamkniętym lochu), kafelek trafia do `hand`.
 - **BossOffer:** po 10. wygranej oferta bossów, w prototypie z **1 kartą** (ten sam popup); wybrany Boss stawia się automatycznie. Kod ma obsługiwać wybór 1 z N (lista w danych), żeby wybór 1 z 3 dało się włączyć później bez zmian w `sim`.
+- **Drzewko umiejętności (zalążek):** w Prep przycisk „Drzewko ulepszeń” (z liczbą wolnych punktów) otwiera drzewko klasy: węzły na siatce 20×15, kupuje się je za punkty (1 poziom = 1 punkt, każdy węzeł kosztuje 1), korzenie od razu, pozostałe po kupieniu połączonego węzła; wydane punkty są ostateczne, drzewko jest osobne dla każdego runu i klasy (dane `skillTrees.json`, na razie tylko `warrior`). **Efekty węzłów jeszcze nie działają.**
 - **Prep:** zwykle `hand` jest pusta (kafelek stawia się sam po wyborze). **Gdy `hand` nie jest pusta** (wyjątki powyżej), przycisk Start jest nieaktywny, dopóki kafelek nie zostanie postawiony ręcznie; nie można go odłożyć. W Prep gracz też zakłada/zdejmuje artefakty, scala artefakty i przypisuje ulepszenia pokoi.
 - **Action:** po „Start” kamera mapy płynnie wjeżdża do pokoju startowego (mgła zasłania resztę), widok przenika do rajdu, na ok. 1 s pojawia się popup „Fala x/10” (dla Bossa „Boss”), bohater wchodzi przez lewe drzwi i zaczyna się walka. Po oczyszczeniu pokoju bohater idzie do drzwi wyjściowych (drzwi się otwierają), obraz lekko przesuwa się i przenika do następnego pokoju, gdzie bohater wchodzi przez drzwi wejściowe. Gracz może tylko zmieniać prędkość (1×/2×/4×) i klikać „Pomiń”. Brak innej interakcji (**czysty autobattler**).
 - **Resolve:** popup z podsumowaniem na ostatnim pokoju (Wygrana/Przegrana, złoto jako placeholder, łup, utracone życie), przycisk „Dalej” uruchamia odjazd kamery z powrotem do widoku całej mapy (po przegranej z zerem żyć i po zwycięstwie przechodzi do ekranu końcowego). Wygrana: `wavesWon++`. Porażka: `lives--`.
@@ -171,7 +172,7 @@ final = (base + Σ flat) × (1 + Σ percentAdd) × Π percentMult
 
 **Obrażenia:** `dmg = max(1, atk × 100 / (100 + def))`, krytyk mnoży przez `critMult`. Trafienie: rzut na `accuracy`, potem rzut na krytyk (stała kolejność rzutów).
 
-Bohater ma **poziom (1–10) i EXP**: 10 EXP za każdego zabitego potwora (też w przegranym rajdzie), 50 EXP na poziom, wartości w `balance.heroLevel`. EXP trafia do postaci przy przejściu z Resolve dalej (do Prep), a poziom na razie **nic nie daje** (1 poziom = 1 punkt drzewka umiejętności, patrz niżej). Moc w rajdzie pochodzi z artefaktów. HP odnawia się do pełna na starcie każdego rajdu, w rajdzie leczą tylko efekty (Świątynia, Fontanna, pasywka Wojownika, lifesteal).
+Bohater ma **poziom (1–10) i EXP**: 10 EXP za każdego zabitego potwora (też w przegranym rajdzie), 50 EXP na poziom, wartości w `balance.heroLevel`. EXP trafia do postaci przy przejściu z Resolve dalej (do Prep), a poziom na razie **nic nie daje** (1 poziom powyżej pierwszego = 1 punkt drzewka umiejętności). Moc w rajdzie pochodzi z artefaktów. HP odnawia się do pełna na starcie każdego rajdu, w rajdzie leczą tylko efekty (Świątynia, Fontanna, pasywka Wojownika, lifesteal).
 
 ### 6.4 Artefakty, plecak i scalanie
 
@@ -266,6 +267,7 @@ interface RunState {
   lastRaid: RaidSummary | null;
   stats: RunStats;
   level: number; xp: number;          // poziom bohatera 1..10 i EXP do następnego poziomu
+  skills: Record<string, number>;     // kupione poziomy węzłów drzewka umiejętności (id węzła → poziom)
   nextUid: number;                    // licznik deterministycznych id (kafelki, artefakty); dodany w M0
 }
 

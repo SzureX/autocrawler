@@ -8,6 +8,7 @@ import monstersJson from './json/monsters.json';
 import bossesJson from './json/bosses.json';
 import roomUpgradesJson from './json/roomUpgrades.json';
 import roomLayoutsJson from './json/roomLayouts.json';
+import skillTreesJson from './json/skillTrees.json';
 import { DataValidationError, loadGameData, parseGameData, type RawGameData } from './loader';
 
 const raw = (): RawGameData =>
@@ -21,6 +22,7 @@ const raw = (): RawGameData =>
     bosses: bossesJson,
     roomUpgrades: roomUpgradesJson,
     roomLayouts: roomLayoutsJson,
+    skillTrees: skillTreesJson,
   });
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
@@ -94,5 +96,58 @@ describe('game data', () => {
       );
       expect(() => parseGameData(withLayouts([layout(), layout()]))).toThrow(/Duplicate/);
     });
+  });
+});
+
+type RawTree = {
+  warrior: {
+    nodes: {
+      id: string;
+      requires: string[];
+      startState: string;
+      position: { x: number; y: number };
+    }[];
+  };
+};
+
+describe('skill trees', () => {
+  it('the warrior has the 9-node tree: 3 roots and 2 nodes above each', () => {
+    const tree = loadGameData().skillTrees['warrior'];
+    expect(tree?.nodes).toHaveLength(9);
+    expect(tree?.nodes.filter((n) => n.requires.length === 0)).toHaveLength(3);
+    expect(tree?.grid).toEqual({ cols: 20, rows: 15 });
+    for (const n of tree?.nodes ?? []) {
+      expect(n.maxLevel).toBe(1);
+      expect(n.levels.map((l) => l.cost)).toEqual([1]);
+    }
+  });
+
+  it('rejects a node that requires an unknown node', () => {
+    const r = raw();
+    (r.skillTrees as RawTree).warrior.nodes[3]!.requires = ['nope'];
+    expect(() => parseGameData(r)).toThrow(/requires unknown node/);
+  });
+
+  it('rejects cycles', () => {
+    const r = raw();
+    const nodes = (r.skillTrees as RawTree).warrior.nodes;
+    nodes[0]!.requires = ['u40'];
+    nodes[0]!.startState = 'available';
+    expect(() => parseGameData(r)).toThrow(/cycle/);
+  });
+
+  it('rejects nodes outside the grid and a tree of an unknown class', () => {
+    const r = raw();
+    (r.skillTrees as RawTree).warrior.nodes[0]!.position = { x: 99, y: 0 };
+    expect(() => parseGameData(r)).toThrow(/outside the grid/);
+    const r2 = raw();
+    (r2.skillTrees as Record<string, unknown>)['ghost'] = (r2.skillTrees as RawTree).warrior;
+    expect(() => parseGameData(r2)).toThrow(/unknown class/);
+  });
+
+  it('a root is unlocked exactly when it has no requirements', () => {
+    const r = raw();
+    (r.skillTrees as RawTree).warrior.nodes[3]!.startState = 'unlocked';
+    expect(() => parseGameData(r)).toThrow(/unlocked exactly when/);
   });
 });

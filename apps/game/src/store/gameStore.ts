@@ -8,6 +8,7 @@ import {
   startRaid,
   type RaidResult,
   assignUpgrade,
+  buySkill,
   removeUpgrade,
   chooseAndPlaceTile,
   createRun,
@@ -51,6 +52,9 @@ interface GameStore {
   placeTile: (tileUid: string, pos: Pos) => void;
   assignUpgrade: (roomKey: string, upgradeId: string) => void;
   removeUpgrade: (roomKey: string) => void;
+  buySkill: (nodeId: string) => void;
+  /** Debug: raises the hero's level by one (a skill point each) without any experience. */
+  debugAddLevel: () => void;
   debugAddUpgrade: (upgradeId: string) => void;
   equipArtifact: (artifactUid: string, slot: number) => void;
   unequipSlot: (slot: number) => void;
@@ -91,6 +95,17 @@ export const useGameStore = create<GameStore>((set, get) => ({
   removeUpgrade: (roomKey) => {
     const { run } = get();
     if (run) set({ run: removeUpgrade(run, roomKey) });
+  },
+  buySkill: (nodeId) => {
+    const { run } = get();
+    if (run) set({ run: buySkill(gameData, run, nodeId) });
+  },
+  debugAddLevel: () => {
+    const { run } = get();
+    if (run) {
+      const level = Math.min(run.level + 1, gameData.balance.heroLevel.maxLevel);
+      set({ run: { ...run, level, xp: 0 } });
+    }
   },
   debugAddUpgrade: (upgradeId) => {
     const { run } = get();

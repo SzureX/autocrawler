@@ -107,6 +107,8 @@ export interface RunState {
   /** Hero level (1..max) and experience towards the next level (a full bar at the cap). */
   level: number;
   xp: number;
+  /** Skill tree levels bought in this run, by node id. */
+  skills: Record<string, number>;
   /** Counter used to mint unique ids (tiles, artifacts). Keeps ids deterministic. */
   nextUid: number;
 }

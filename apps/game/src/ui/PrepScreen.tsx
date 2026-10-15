@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
 import {
+  availableSkillPoints,
   backpackStacks,
   estimateThreat,
   legalPlacements,
@@ -17,6 +18,7 @@ import { DragButton, parseDrag, parseDrop, upgradeDragId } from './dnd';
 import { DungeonMap, MAP_HEIGHT, MAP_WIDTH, type MapHandle } from './DungeonMap';
 import { InventoryPanel } from './InventoryPanel';
 import { upgradeName } from './names';
+import { SkillTreeScreen } from './SkillTreeScreen';
 import { TileOfferPopup } from './TileOfferPopup';
 import { TileView } from './TileView';
 
@@ -64,6 +66,8 @@ export function PrepScreen({ run }: { run: RunState }) {
   const [intro, setIntro] = useState(bridge?.roomKey != null);
   const [bridgeShown, setBridgeShown] = useState(bridge !== null);
   const [starting, setStarting] = useState(false);
+  const [skillsOpen, setSkillsOpen] = useState(false);
+  const skillPoints = availableSkillPoints(gameData, run);
   // A stale choice (from an earlier offer) is ignored.
   const chosen = chosenUid && run.tileOffer.some((t) => t.uid === chosenUid) ? chosenUid : null;
   useEffect(() => {
@@ -225,6 +229,14 @@ export function PrepScreen({ run }: { run: RunState }) {
             <p className="hint">
               {t(selected ? 'ui.upgrades.assignHint' : 'ui.upgrades.pickHint')}
             </p>
+            <button type="button" onClick={() => setSkillsOpen(true)} data-testid="skills-open">
+              {t('ui.skills.open')}
+              {skillPoints > 0 && (
+                <span className="skills-badge" data-testid="skills-badge">
+                  {skillPoints}
+                </span>
+              )}
+            </button>
             <ThreatBadge run={run} />
             <button
               type="button"
@@ -239,6 +251,7 @@ export function PrepScreen({ run }: { run: RunState }) {
           <InventoryPanel run={run} />
         </div>
       </section>
+      {skillsOpen && <SkillTreeScreen run={run} onClose={() => setSkillsOpen(false)} />}
     </DndContext>
   );
 }

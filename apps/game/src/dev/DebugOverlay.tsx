@@ -30,6 +30,7 @@ export function DebugOverlay() {
   const debugAddUpgrade = useGameStore((s) => s.debugAddUpgrade);
   const debugResolve = useGameStore((s) => s.debugResolve);
   const debugSetWaves = useGameStore((s) => s.debugSetWaves);
+  const debugAddLevel = useGameStore((s) => s.debugAddLevel);
   const [artifactToAdd, setArtifactToAdd] = useState('iron_helm');
 
   useEffect(() => {
@@ -128,6 +129,9 @@ export function DebugOverlay() {
                 {t('debug.setWaves')} 9
               </button>
             </div>
+            <button onClick={debugAddLevel} data-testid="debug-add-level">
+              {t('debug.addLevel')}
+            </button>
             <button onClick={debugNextWave} data-testid="debug-next-wave">
               {t('debug.nextWave')}
             </button>

@@ -7,6 +7,7 @@ import {
   metaSchema,
   monsterSchema,
   roomLayoutSchema,
+  skillTreeSchema,
   roomTypeSchema,
   roomUpgradeSchema,
   type GameData,
@@ -20,6 +21,7 @@ import monstersJson from './json/monsters.json';
 import bossesJson from './json/bosses.json';
 import roomUpgradesJson from './json/roomUpgrades.json';
 import roomLayoutsJson from './json/roomLayouts.json';
+import skillTreesJson from './json/skillTrees.json';
 
 export interface RawGameData {
   meta: unknown;
@@ -31,6 +33,7 @@ export interface RawGameData {
   bosses: unknown;
   roomUpgrades: unknown;
   roomLayouts: unknown;
+  skillTrees: unknown;
 }
 
 export class DataValidationError extends Error {}
@@ -61,6 +64,50 @@ function parseWith<T extends z.ZodType>(schema: T, value: unknown, what: string)
   return res.data;
 }
 
+/** Skill trees: known classes, unique nodes, valid links without cycles, nodes inside the grid. */
+function checkSkillTrees(data: GameData): void {
+  for (const [classId, tree] of Object.entries(data.skillTrees)) {
+    const what = `skillTree ${classId}`;
+    if (!(classId in data.classes)) throw new DataValidationError(`${what}: unknown class`);
+    const byId = toRecord(tree.nodes, `${what} node`);
+    for (const node of tree.nodes) {
+      const { x, y } = node.position;
+      if (x >= tree.grid.cols || y >= tree.grid.rows) {
+        throw new DataValidationError(`${what}: node ${node.id} is outside the grid`);
+      }
+      for (const req of node.requires) {
+        if (req === node.id || !(req in byId)) {
+          throw new DataValidationError(`${what}: node ${node.id} requires unknown node ${req}`);
+        }
+      }
+      if ((node.startState === 'unlocked') !== (node.requires.length === 0)) {
+        throw new DataValidationError(
+          `${what}: node ${node.id} is unlocked exactly when it has no requirements`,
+        );
+      }
+      if (node.levels.length !== node.maxLevel) {
+        throw new DataValidationError(`${what}: node ${node.id} needs ${node.maxLevel} levels`);
+      }
+      node.levels.forEach((l, i) => {
+        if (l.level !== i + 1) {
+          throw new DataValidationError(`${what}: node ${node.id} levels must count from 1`);
+        }
+      });
+    }
+    // No cycles: walk every node back to the roots.
+    for (const node of tree.nodes) {
+      const seen = new Set<string>();
+      const walk = (id: string): void => {
+        if (seen.has(id)) throw new DataValidationError(`${what}: cycle through node ${id}`);
+        seen.add(id);
+        for (const req of byId[id]?.requires ?? []) walk(req);
+        seen.delete(id);
+      };
+      walk(node.id);
+    }
+  }
+}
+
 /** Validates raw JSON with Zod, then checks id uniqueness and cross references. */
 export function parseGameData(raw: RawGameData): GameData {
   const data: GameData = {
@@ -79,6 +126,7 @@ export function parseGameData(raw: RawGameData): GameData {
       parseWith(z.array(roomLayoutSchema), raw.roomLayouts, 'roomLayouts'),
       'roomLayout',
     ),
+    skillTrees: parseWith(z.record(z.string(), skillTreeSchema), raw.skillTrees, 'skillTrees'),
   };
 
   const maxLevel = data.balance.wavesToBoss + 1;
@@ -119,6 +167,7 @@ export function parseGameData(raw: RawGameData): GameData {
       }
     }
   }
+  checkSkillTrees(data);
   return data;
 }
 
@@ -134,6 +183,7 @@ export function loadGameData(): GameData {
     bosses: bossesJson,
     roomUpgrades: roomUpgradesJson,
     roomLayouts: roomLayoutsJson,
+    skillTrees: skillTreesJson,
   });
 }
 
@@ -146,5 +196,9 @@ export function collectI18nKeys(data: GameData): string[] {
   for (const m of Object.values(data.monsters)) keys.push(m.nameKey);
   for (const b of Object.values(data.bosses)) keys.push(b.nameKey);
   for (const u of Object.values(data.roomUpgrades)) keys.push(u.nameKey, u.descKey);
+  for (const tree of Object.values(data.skillTrees)) {
+    keys.push(tree.nameKey);
+    for (const n of tree.nodes) keys.push(n.nameKey, n.descKey);
+  }
   return keys;
 }

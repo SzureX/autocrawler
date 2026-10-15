@@ -245,6 +245,35 @@ export const roomLayoutSchema = z.object({
 });
 export type RoomLayoutDef = z.infer<typeof roomLayoutSchema>;
 
+/** One level of a skill: what it costs (skill points) and its effect (not used yet). */
+export const skillLevelSchema = z.object({
+  level: z.number().int().min(1),
+  cost: z.number().int().positive(),
+  effect: z.string(),
+});
+
+/** One node of a skill tree; it sits at `position` on the tree's grid (y grows downwards). */
+export const skillNodeSchema = z.object({
+  id,
+  nameKey: z.string().min(1),
+  descKey: z.string().min(1),
+  icon: z.string().min(1),
+  position: z.object({ x: z.number().int().min(0), y: z.number().int().min(0) }),
+  /** `unlocked`: a root that can be bought at once; `available`: needs its `requires` first. */
+  startState: z.enum(['unlocked', 'available']),
+  requires: z.array(z.string()),
+  maxLevel: z.number().int().positive(),
+  levels: z.array(skillLevelSchema).min(1),
+});
+export type SkillNodeDef = z.infer<typeof skillNodeSchema>;
+
+export const skillTreeSchema = z.object({
+  nameKey: z.string().min(1),
+  grid: z.object({ cols: z.number().int().positive(), rows: z.number().int().positive() }),
+  nodes: z.array(skillNodeSchema).min(1),
+});
+export type SkillTreeDef = z.infer<typeof skillTreeSchema>;
+
 export const metaSchema = z.object({ gameName: z.string(), saveVersion: z.number().int() });
 export type Meta = z.infer<typeof metaSchema>;
 
@@ -258,4 +287,6 @@ export interface GameData {
   bosses: Record<string, BossDef>;
   roomUpgrades: Record<string, RoomUpgradeDef>;
   roomLayouts: Record<string, RoomLayoutDef>;
+  /** Skill tree per class id (a class without an entry has no tree). */
+  skillTrees: Record<string, SkillTreeDef>;
 }
