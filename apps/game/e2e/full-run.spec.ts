@@ -27,7 +27,7 @@ async function assignUpgrades(page: Page): Promise<void> {
     const stored = page.locator('[data-testid^="storage-"]').first();
     if ((await stored.count()) === 0) return;
     await stored.click();
-    await page.getByTestId('cell-4,4').click();
+    await page.getByTestId('cell-0,4').click();
   }
 }
 
@@ -36,8 +36,9 @@ test('a bot plays a whole run through the UI (skip mode) and reaches the end scr
 }) => {
   const errors = trackErrors(page);
   await page.goto('/?seed=11');
+  await page.getByTestId('menu-new-game').click();
   await shot(page, 'm6a-class-select');
-  await page.getByTestId('class-mage').getByRole('button').click();
+  await page.getByTestId('class-warrior').getByRole('button').click();
 
   const seen: Record<string, boolean> = {};
   for (let step = 0; step < 400; step++) {

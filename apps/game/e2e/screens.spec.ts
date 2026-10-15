@@ -7,9 +7,10 @@ import { buildHand, shot, startAndBuild, trackErrors } from './helpers';
 test('room tooltip shows type, monsters and upgrade', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/?seed=5');
+  await page.getByTestId('menu-new-game').click();
   await startAndBuild(page);
-  await page.getByTestId('cell-4,4').hover();
-  const tip = page.getByTestId('cell-4,4').getByTestId('room-tooltip');
+  await page.getByTestId('cell-0,4').hover();
+  const tip = page.getByTestId('cell-0,4').getByTestId('room-tooltip');
   await expect(tip).toBeVisible();
   await expect(tip).toContainText('Komnata');
   await expect(tip).toContainText('×');
@@ -20,6 +21,7 @@ test('room tooltip shows type, monsters and upgrade', async ({ page }) => {
 test('equipping shows a before/after diff, drag and drop works like clicking', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/?seed=5');
+  await page.getByTestId('menu-new-game').click();
   await startAndBuild(page);
   await page.getByTestId('debug-artifact-select').selectOption('sharp_dagger');
   await page.getByTestId('debug-add-artifact').click();
@@ -55,7 +57,7 @@ test('equipping shows a before/after diff, drag and drop works like clicking', a
   // Upgrade by drag to the start room, then the threat badge is visible.
   await page.getByTestId('debug-add-upgrade-fountain').click();
   const up = await page.getByTestId('storage-fountain').boundingBox();
-  const room = await page.getByTestId('cell-4,4').boundingBox();
+  const room = await page.getByTestId('cell-0,4').boundingBox();
   if (!up || !room) throw new Error('missing boxes');
   await page.mouse.move(up.x + up.width / 2, up.y + up.height / 2);
   await page.mouse.down();
@@ -63,7 +65,7 @@ test('equipping shows a before/after diff, drag and drop works like clicking', a
   await page.mouse.move(room.x + room.width / 2, room.y + room.height / 2, { steps: 15 });
   await page.mouse.up();
   await page.waitForTimeout(150); // dnd-kit swallows the click that follows a drag
-  await expect(page.getByTestId('upgrade-4,4')).toBeVisible();
+  await expect(page.getByTestId('upgrade-0,4')).toBeVisible();
   await expect(page.getByTestId('threat')).toBeVisible();
   await shot(page, 'm6b-prep-upgrades');
   expect(errors).toEqual([]);
@@ -71,7 +73,8 @@ test('equipping shows a before/after diff, drag and drop works like clicking', a
 
 test('Start is blocked until the tile is built', async ({ page }) => {
   await page.goto('/?seed=5');
-  await page.getByTestId('class-rogue').getByRole('button').click();
+  await page.getByTestId('menu-new-game').click();
+  await page.getByTestId('class-warrior').getByRole('button').click();
   await page.locator('[data-testid^="take-"]').first().click();
   await expect(page.getByTestId('start-raid')).toBeDisabled();
   await buildHand(page);
@@ -81,6 +84,7 @@ test('Start is blocked until the tile is built', async ({ page }) => {
 test('a lost raid costs a life and the game ends after five defeats', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/?seed=3');
+  await page.getByTestId('menu-new-game').click();
   await startAndBuild(page);
   for (let i = 0; i < 5; i++) {
     await page.getByTestId('debug-lose-raid').click();
@@ -98,6 +102,7 @@ test('a lost raid costs a life and the game ends after five defeats', async ({ p
 test('ten wins then the player places the boss room and wins', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/?seed=3');
+  await page.getByTestId('menu-new-game').click();
   await startAndBuild(page);
   await page.getByTestId('debug-waves-9').click();
   await page.getByTestId('debug-win-raid').click();
@@ -116,6 +121,7 @@ test('ten wins then the player places the boss room and wins', async ({ page }) 
 test('the stage is letterboxed and keeps the 16:9 ratio', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto('/?seed=5');
+  await page.getByTestId('menu-new-game').click();
   const box = await page.getByTestId('stage').boundingBox();
   if (!box) throw new Error('no stage');
   expect(box.width / box.height).toBeCloseTo(16 / 9, 2);

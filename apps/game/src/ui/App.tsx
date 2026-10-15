@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { dungeonLevel } from '@loch/sim';
 import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
 import { ClassSelectScreen } from './ClassSelectScreen';
 import { EndScreen } from './EndScreen';
+import { MainMenu } from './MainMenu';
 import { PrepScreen } from './PrepScreen';
 import { RaidScreen } from './RaidScreen';
 import { ResolveScreen } from './ResolveScreen';
@@ -10,6 +12,22 @@ import { TileOfferScreen } from './TileOfferScreen';
 
 export function App() {
   const run = useGameStore((s) => s.run);
+  const [started, setStarted] = useState(false);
+  // The menu shows first; it also yields when a run is created from elsewhere (debug overlay).
+  const [firstRun] = useState(run);
+  const resetRun = useGameStore((s) => s.resetRun);
+  if (!started && run === firstRun) {
+    return (
+      <MainMenu
+        canContinue={firstRun !== null}
+        onContinue={() => setStarted(true)}
+        onNewGame={() => {
+          resetRun();
+          setStarted(true);
+        }}
+      />
+    );
+  }
   return (
     <main className="app">
       <header className="hud">
