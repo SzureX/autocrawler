@@ -24,6 +24,8 @@ import { TileView } from './TileView';
 
 /** Time the chosen card punches before its room takes off. */
 const PUNCH_MS = 350;
+/** Pause after the map is fully shown again, before the next tile offer pops up. */
+const INTRO_PAUSE_MS = 300;
 
 function ThreatBadge({ run }: { run: RunState }) {
   const threat = useMemo(() => estimateThreat(gameData, run), [run]);
@@ -169,7 +171,12 @@ export function PrepScreen({ run }: { run: RunState }) {
               tile={tile}
               handleRef={map}
               introRoom={bridge?.roomKey ?? null}
-              onIntroDone={() => setIntro(false)}
+              onIntroDone={() => {
+                // A short pause once the whole dungeon is in view, then the offer appears.
+                window.setTimeout(() => {
+                  if (mounted.current) setIntro(false);
+                }, INTRO_PAUSE_MS);
+              }}
               onPlace={(pos) => tile && placeTile(tile.uid, pos)}
               selectedUpgrade={selected}
               onRoomClick={(key) => {

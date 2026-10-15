@@ -1,6 +1,9 @@
 import { Color, Group, Mesh, PlaneGeometry, ShaderMaterial, Vector4 } from 'three';
 import type { WorldRect } from './mapLayout';
 
+/** Colour of the far fog: the scenes use it as their background so they melt into it. */
+export const FOG_BACKGROUND = 0x7c828b;
+
 /** The shader loops over this many room rectangles (15 rooms + the boss room). */
 export const MAX_FOG_ROOMS = 16;
 /** Distance (world units) over which the fog thickens from the rooms outwards. */
@@ -43,7 +46,7 @@ float noise(vec2 p) {
 float fbm(vec2 p) {
   float v = 0.0;
   float a = 0.5;
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 4; i++) {
     v += a * noise(p);
     p = p * 2.03 + vec2(17.0, 9.0);
     a *= 0.5;
@@ -63,9 +66,7 @@ void main() {
   }
   float t = smoothstep(0.0, uReach, d);
   vec2 drift = vec2(uTime * uSpeed, uTime * uSpeed * 0.55);
-  float a = fbm(vWorld * uScale + drift);
-  float b = fbm(vWorld * uScale * 2.3 - drift * 1.4 + 5.0);
-  float cloud = mix(a, b, 0.4);
+  float cloud = fbm(vWorld * uScale + drift);
   float density = mix(uThin, uThick, t) * (0.55 + 0.95 * cloud);
   // The fog melts away at the walls of the rooms instead of cutting them off.
   float alpha = clamp(density, 0.0, 1.0) * smoothstep(0.0, 3.5, d);

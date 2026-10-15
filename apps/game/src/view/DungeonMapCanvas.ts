@@ -23,7 +23,7 @@ import { gameData } from '../store/gameStore';
 import { builderFiles, propFiles } from './builderCatalog';
 import { sharedModels } from './models';
 import { WALL_HEIGHT, mapBounds, parseKey, roomPitch, roomRect, roomWorld } from './mapLayout';
-import { MapFog } from './mapFog';
+import { FOG_BACKGROUND, MapFog } from './mapFog';
 import { RAID_DISTANCE, RAID_FOV, RAID_LOOK_HEIGHT, RAID_START_FOCUS } from './cameraFrame';
 import { reducedMotion } from './motion';
 import { RoomStage } from './roomStage';
@@ -42,8 +42,6 @@ const CAMERA_SPEED = 3.2;
 /** Slower, for the trip between the map and a room. */
 const TRIP_SPEED = 2.4;
 const TRIP_MAX_SECONDS = 2.4;
-/** Matches the far fog, so the map blends into it at the edges. */
-const BACKGROUND = 0x7c828b;
 
 export interface CellRect {
   left: number;
@@ -156,7 +154,7 @@ export class DungeonMapCanvas {
     private readonly height: number,
   ) {
     this.camera = new PerspectiveCamera(FOV, width / height, 0.5, 600);
-    this.scene.background = new Color(BACKGROUND);
+    this.scene.background = new Color(FOG_BACKGROUND);
     this.scene.add(new AmbientLight(0xffffff, 1.1));
     const sun = new DirectionalLight(0xffffff, 2.2);
     sun.position.set(40, 90, 55);
@@ -355,7 +353,11 @@ export class DungeonMapCanvas {
     const trip = this.trip;
     if (!trip) return;
     trip.startMs ??= time;
+    const fogCleared =
+      this.mode !== 'overview' ||
+      Object.keys(this.rooms).every((k) => (this.weights[k] ?? 1) > 0.99);
     const near =
+      fogCleared &&
       this.focus.distanceTo(this.goalFocus) < 0.15 &&
       Math.abs(this.distance - this.goalDistance) < 0.2 &&
       Math.abs(this.yaw - this.goalYaw) < 0.6;

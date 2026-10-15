@@ -36,6 +36,8 @@ import {
 import { builderFiles, propFiles } from './builderCatalog';
 import { sharedModels } from './models';
 import { RAID_CAMERA_OFFSET as CAMERA_OFFSET, RAID_FOV, RAID_LOOK_HEIGHT } from './cameraFrame';
+import { FOG_BACKGROUND, MapFog } from './mapFog';
+import { roomRect } from './mapLayout';
 import { reducedMotion } from './motion';
 import { ShapeCache, TextureCache } from './placeholders';
 import { RoomStage } from './roomStage';
@@ -50,6 +52,8 @@ const TRANSITION_SECONDS = 0.22;
 const TRANSITION_PX = 70;
 /** A door opens when the hero is this close (in cells) and shuts when he walks away. */
 const DOOR_OPEN_DISTANCE = 2.4;
+/** A door stays open this close to it while the hero walks in (it shuts behind him). */
+const DOOR_CROSSING_DISTANCE = 1.2;
 /** Switch for the door-opening animation (an experiment; off leaves the doorways as they are). */
 const ANIMATE_DOORS = true;
 /** Screen direction the picture slides in when the hero leaves through a door on that side. */
@@ -171,11 +175,16 @@ export class RaidCanvas {
   private skipRequested = false;
   private lastTime: number | null = null;
   private listeners: ((s: PlaybackState) => void)[] = [];
+  private readonly fog: MapFog;
   private trans: Transition | null = null;
   private readonly doorOpen: Record<Dir, number> = { N: 0, E: 0, S: 0, W: 0 };
 
   constructor(private readonly host: HTMLElement) {
-    this.scene.background = new Color(0x14161c);
+    // The same fog as on the dungeon map, so the room stays wrapped in it through the raid.
+    this.scene.background = new Color(FOG_BACKGROUND);
+    this.fog = new MapFog({ x: 0, z: 0 }, { x: 90, z: 70 });
+    this.fog.setRooms([{ rect: roomRect('0,0', this.board), weight: 1 }]);
+    this.scene.add(this.fog.group);
     this.scene.add(this.stage.group);
   }
 
@@ -248,6 +257,7 @@ export class RaidCanvas {
       if (Array.isArray(m)) m.forEach((x) => x.dispose());
       else m?.dispose();
     });
+    this.fog.dispose();
     this.shapes.dispose();
     this.textures.dispose();
     renderer.dispose();
@@ -305,6 +315,7 @@ export class RaidCanvas {
         advanced = true;
       }
     }
+    this.fog.setTime(reducedMotion() ? 0 : timeMs / 1000);
     this.sync(dt, timeMs / 1000);
     if (advanced) this.emit();
     this.renderer?.render(this.scene, this.camera);
@@ -459,9 +470,14 @@ export class RaidCanvas {
       W: { x: 0, y: cy },
       E: { x: width - 1, y: cy },
     };
+    const outside = hero.x < 0 || hero.y < 0 || hero.x > width - 1 || hero.y > height - 1;
     for (const side of state.doors) {
       const d = doors[side];
-      const goal = Math.hypot(hero.x - d.x, hero.y - d.y) < DOOR_OPEN_DISTANCE ? 1 : 0;
+      const dist = Math.hypot(hero.x - d.x, hero.y - d.y);
+      // Open while the hero crosses the doorway; shut behind him once he is inside and fighting,
+      // open again when the room is cleared and he walks to the exit.
+      const crossing = outside || dist < DOOR_CROSSING_DISTANCE;
+      const goal = state.cleared ? (dist < DOOR_OPEN_DISTANCE ? 1 : 0) : crossing ? 1 : 0;
       this.doorOpen[side] = snap
         ? 0
         : this.doorOpen[side] + (goal - this.doorOpen[side]) * smoothing(dt, 9);

@@ -163,12 +163,23 @@ test('Start flies into the first room, the wave popup shows, and the summary lea
   await page.locator('[data-testid^="take-"]').first().click();
   await expect(page.getByTestId('start-raid')).toBeEnabled({ timeout: 30_000 });
   await page.waitForTimeout(1500);
+  // The wave popup only shows for a second and the page can be busy, so record it as it appears.
+  await page.evaluate(() => {
+    new MutationObserver(() => {
+      const el = document.querySelector('[data-testid="wave-popup"]');
+      if (el) (window as unknown as { __wave: string }).__wave = el.textContent ?? '';
+    }).observe(document.body, { childList: true, subtree: true });
+  });
   await page.getByTestId('start-raid').click();
   await expect(page.getByTestId('raid-screen')).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByTestId('wave-popup')).toContainText('1/10');
-  await shot(page, 'flow-wave-popup');
-  await expect(page.getByTestId('wave-popup')).toHaveCount(0, { timeout: 10_000 });
-  await page.waitForTimeout(1500);
+  await page.waitForFunction(() => (window as unknown as { __wave?: string }).__wave, null, {
+    timeout: 30_000,
+  });
+  expect(await page.evaluate(() => (window as unknown as { __wave: string }).__wave)).toContain(
+    '1/10',
+  );
+  // Skip is locked while the popup shows; once it is gone the raid runs.
+  await expect(page.getByTestId('raid-skip')).toBeEnabled({ timeout: 30_000 });
   await shot(page, 'flow-raid-start');
   await page.getByTestId('raid-skip').click();
   await expect(page.getByTestId('raid-summary')).toBeVisible();

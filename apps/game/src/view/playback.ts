@@ -68,6 +68,8 @@ export interface PlaybackState {
   floaters: Floater[];
   lines: LogLine[];
   ended: boolean;
+  /** Every monster of the room being shown is dead (the hero heads for the exit). */
+  cleared: boolean;
   won: boolean | null;
   reason: string | null;
   heroMaxHp: number;
@@ -97,6 +99,7 @@ export class RaidPlayback {
   private layoutId: string | null = null;
   private doors: Dir[] = ['N', 'E', 'S', 'W'];
   private ended = false;
+  private cleared = false;
   private won: boolean | null = null;
   private reason: string | null = null;
   private heroMaxHp = 0;
@@ -162,6 +165,7 @@ export class RaidPlayback {
       floaters: [...this.floaters],
       lines: this.lines.slice(-LOG_LINES),
       ended: this.ended,
+      cleared: this.cleared,
       won: this.won,
       reason: this.reason,
       heroMaxHp: this.heroMaxHp,
@@ -216,6 +220,7 @@ export class RaidPlayback {
           hero.x = at.x;
           hero.y = at.y;
         }
+        this.cleared = false;
         this.roomKey = e.roomKey;
         this.roomTypeId = e.roomTypeId;
         this.upgradeId = e.upgradeId;
@@ -295,6 +300,7 @@ export class RaidPlayback {
         if (this.chest) this.chest.openedTick = e.tick;
         break;
       case 'RoomCleared':
+        this.cleared = true;
         this.line({ tick: e.tick, kind: 'cleared' });
         break;
       case 'LootDropped': {
