@@ -24,7 +24,7 @@ import { builderFiles, propFiles } from './builderCatalog';
 import { sharedModels } from './models';
 import { WALL_HEIGHT, mapBounds, parseKey, roomPitch, roomRect, roomWorld } from './mapLayout';
 import { FOG_BACKGROUND, MapFog } from './mapFog';
-import { RAID_DISTANCE, RAID_FOV, RAID_LOOK_HEIGHT, RAID_START_FOCUS } from './cameraFrame';
+import { RAID_FOV, RAID_LOOK_HEIGHT, wholeRoomFrame } from './cameraFrame';
 import { reducedMotion } from './motion';
 import { RoomStage } from './roomStage';
 import { showRoom, type RoomLook } from './roomShow';
@@ -301,8 +301,8 @@ export class DungeonMapCanvas {
     this.closeKey = key;
     const p = parseKey(key);
     const c = roomWorld(p.x, p.y, this.board);
-    this.goalFocus.set(c.x + RAID_START_FOCUS.x, RAID_LOOK_HEIGHT, c.z + RAID_START_FOCUS.z);
-    this.goalDistance = RAID_DISTANCE;
+    this.goalFocus.set(c.x, RAID_LOOK_HEIGHT, c.z);
+    this.goalDistance = this.roomFrame();
     this.goalYaw = 0;
     this.goalFov = RAID_FOV;
     return new Promise((resolve) => {
@@ -318,8 +318,8 @@ export class DungeonMapCanvas {
     const c = roomWorld(p.x, p.y, this.board);
     this.focus.set(c.x, RAID_LOOK_HEIGHT, c.z);
     this.goalFocus.copy(this.focus);
-    this.distance = RAID_DISTANCE;
-    this.goalDistance = RAID_DISTANCE;
+    this.distance = this.roomFrame();
+    this.goalDistance = this.distance;
     this.yaw = 0;
     this.goalYaw = 0;
     this.fov = RAID_FOV;
@@ -347,6 +347,11 @@ export class DungeonMapCanvas {
     if (!renderer) return null;
     renderer.render(this.scene, this.camera);
     return renderer.domElement.toDataURL('image/jpeg', 0.85);
+  }
+
+  /** Distance at which the camera shows one whole room, as the raid camera does. */
+  private roomFrame(): number {
+    return wholeRoomFrame(this.board, this.width / this.height).distance;
   }
 
   private finishTrip(time: number): void {

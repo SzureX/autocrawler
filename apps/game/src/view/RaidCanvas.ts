@@ -17,15 +17,7 @@ import {
 } from 'three';
 import type { Dir, RaidEvent } from '@loch/sim';
 import { gameData } from '../store/gameStore';
-import {
-  angleDelta,
-  cellToWorld,
-  clampFocus,
-  facingAngle,
-  lungeAmount,
-  smoothing,
-  type Vec2,
-} from './layout';
+import { angleDelta, cellToWorld, facingAngle, lungeAmount, smoothing, type Vec2 } from './layout';
 import {
   RaidPlayback,
   type Floater,
@@ -35,7 +27,7 @@ import {
 } from './playback';
 import { builderFiles, propFiles } from './builderCatalog';
 import { sharedModels } from './models';
-import { RAID_CAMERA_OFFSET as CAMERA_OFFSET, RAID_FOV, RAID_LOOK_HEIGHT } from './cameraFrame';
+import { RAID_FOV, RAID_LOOK_HEIGHT, wholeRoomFrame } from './cameraFrame';
 import { FOG_BACKGROUND, MapFog } from './mapFog';
 import { roomRect } from './mapLayout';
 import { reducedMotion } from './motion';
@@ -165,7 +157,8 @@ export class RaidCanvas {
   private chestView: ChestView | null = null;
   /** Units that died and are still playing their death animation. */
   private dying: { view: UnitView; left: number }[] = [];
-  private focus: Vec2 = { x: 0, z: 0 };
+  /** The camera never follows the hero: it always shows the whole room. */
+  private readonly frameDistance = wholeRoomFrame(this.board, VIEW_WIDTH / VIEW_HEIGHT);
   private roomKey: string | null = null;
   private playback: RaidPlayback | null = null;
   private speed = 1;
@@ -216,7 +209,7 @@ export class RaidCanvas {
     this.playback.advanceTo(0);
     if (this.skipRequested) this.playback.skipToEnd();
     this.skipRequested = false;
-    this.snapFocus();
+    this.placeCamera();
     this.sync(0);
     this.emit();
   }
@@ -367,21 +360,10 @@ export class RaidCanvas {
     return this.roomKey;
   }
 
-  private heroWorld(state: PlaybackState): Vec2 | null {
-    const hero = state.units.find((u) => u.id === 0);
-    return hero ? cellToWorld(hero.x, hero.y, this.board) : null;
-  }
-
-  private snapFocus(): void {
-    const state = this.playback?.snapshot();
-    const hero = state ? this.heroWorld(state) : null;
-    if (hero) this.focus = clampFocus(hero, this.board);
-    this.placeCamera();
-  }
-
   private placeCamera(): void {
-    this.camera.position.set(this.focus.x, CAMERA_OFFSET.y, this.focus.z + CAMERA_OFFSET.z);
-    this.camera.lookAt(this.focus.x, RAID_LOOK_HEIGHT, this.focus.z);
+    const f = this.frameDistance;
+    this.camera.position.set(0, f.height, f.back);
+    this.camera.lookAt(0, RAID_LOOK_HEIGHT, 0);
   }
 
   /** Brings the 3D scene in line with the playback state (units, floaters, camera). */
@@ -392,7 +374,6 @@ export class RaidCanvas {
     const roomChanged = state.roomKey !== this.roomKey;
     if (roomChanged) {
       this.roomKey = state.roomKey;
-      this.snapFocus();
       this.showRoom(state.doors, state.layoutId);
     }
 
@@ -445,15 +426,6 @@ export class RaidCanvas {
     this.syncChest(state.chest, state.tick);
     this.syncFloaters(state);
 
-    const hero = this.heroWorld(state);
-    if (hero) {
-      const goal = clampFocus(hero, this.board);
-      const k = smoothing(dt);
-      this.focus = {
-        x: this.focus.x + (goal.x - this.focus.x) * k,
-        z: this.focus.z + (goal.z - this.focus.z) * k,
-      };
-    }
     this.placeCamera();
   }
 

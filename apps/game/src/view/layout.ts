@@ -14,16 +14,6 @@ export function cellToWorld(x: number, y: number, board: BoardSize): Vec2 {
   return { x: x - board.width / 2 + 0.5, z: y - board.height / 2 + 0.5 };
 }
 
-/** Keeps the camera focus inside the room so the camera never drifts far outside the walls. */
-export function clampFocus(target: Vec2, board: BoardSize, marginCells = 2): Vec2 {
-  const maxX = Math.max(0, board.width / 2 - marginCells);
-  const maxZ = Math.max(0, board.height / 2 - marginCells);
-  return {
-    x: Math.min(maxX, Math.max(-maxX, target.x)),
-    z: Math.min(maxZ, Math.max(-maxZ, target.z)),
-  };
-}
-
 /** Frame-rate independent smoothing factor in [0, 1] for an exponential approach. */
 export function smoothing(deltaSeconds: number, speed = 6): number {
   return 1 - Math.exp(-speed * Math.max(0, deltaSeconds));

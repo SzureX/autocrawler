@@ -370,7 +370,7 @@ Waga dropu w obrębie rzadkości: równa. Tagi (`tank`, `blade`, `swift`, `vampi
   1. **Wybór klasy**: 3 karty ze statystykami i cechą.
   2. **Oferta kafelków / bossa**: popup na środku mapy z 3 kartami (żywy model pokoju, nazwa, opis, potwory); wybrany pokój leci na mapę i ląduje z hukiem.
   3. **Prep** (główny ekran): mapa lochu jako scena 3D (pokoje wyglądają jak w rajdzie, wspólne ściany i drzwi, kamera 48° dopasowana do całego lochu, nieodkryte pola pod mgłą z siatką, `DungeonMapCanvas`), z przezroczystą warstwą DOM do klikania i przeciągania; kafelek z `hand` (tylko wyjątki), plecak (stosy z licznikiem), 9 slotów, magazyn ulepszeń, panel statystyk z różnicą przed/po (zielone/czerwone), przycisk „Scal”, przycisk Start. **Tooltip nad pokojem:** typ, potwory (ikony × liczba, elita oznaczona), ulepszenie.
-  4. **Rajd**: płótno Three.js (pokój w 3D, kamera podąża za bohaterem, placeholdery z brył), HUD: HP, nazwa pokoju, przyciski 1×/2×/4×/Pomiń, krótki log zdarzeń.
+  4. **Rajd**: płótno Three.js (pokój w 3D, kamera stała, pokazuje cały pokój, placeholdery z brył), HUD: HP, nazwa pokoju, przyciski 1×/2×/4×/Pomiń, krótki log zdarzeń.
   5. **Podsumowanie rajdu**: wynik, lista lootu, utracone życie.
   6. **Victory / GameOver**: statystyki runu, przycisk „Nowy run”.
 - **Stały HUD:** 5 ikon żyć, „Fala X/10”, poziom lochu.

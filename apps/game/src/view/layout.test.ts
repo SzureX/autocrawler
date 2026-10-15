@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { angleDelta, cellToWorld, clampFocus, facingAngle, lungeAmount, smoothing } from './layout';
+import { angleDelta, cellToWorld, facingAngle, lungeAmount, smoothing } from './layout';
 
 const board = { width: 9, height: 7 };
 
@@ -8,12 +8,6 @@ describe('layout', () => {
     expect(cellToWorld(4, 3, board)).toEqual({ x: 0, z: 0 });
     expect(cellToWorld(0, 0, board)).toEqual({ x: -4, z: -3 });
     expect(cellToWorld(8, 6, board)).toEqual({ x: 4, z: 3 });
-  });
-
-  it('clamps the camera focus inside the room', () => {
-    expect(clampFocus({ x: 100, z: -100 }, board)).toEqual({ x: 2.5, z: -1.5 });
-    expect(clampFocus({ x: 1, z: 1 }, board)).toEqual({ x: 1, z: 1 });
-    expect(clampFocus({ x: 5, z: 5 }, { width: 3, height: 3 })).toEqual({ x: 0, z: 0 });
   });
 
   it('smoothing grows with the frame time and never exceeds 1', () => {
