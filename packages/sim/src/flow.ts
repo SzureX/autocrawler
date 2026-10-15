@@ -3,7 +3,7 @@ import type { RaidResult } from './combat/types';
 import { simulateRaid, type SimulateOptions } from './combat/raid';
 import { legalPlacements } from './dungeon';
 import { setPhase } from './phases';
-import { chooseTile, generateBossOffer, generateTileOffer } from './tiles';
+import { generateBossOffer, generateTileOffer } from './tiles';
 import { applyRaidLoot } from './upgrades';
 import type { RaidSummary, RunState } from './types';
 
@@ -54,7 +54,7 @@ export function resolveRaid(run: RunState, result: RaidResult): RunState {
 
 /**
  * Resolve -> the next phase: Victory (boss defeated), GameOver (no lives),
- * TileOffer (win before the boss), BossOffer -> Prep (10th win) or Prep (defeat, no tile).
+ * TileOffer (win before the boss), BossOffer (10th win) or Prep (defeat, no tile).
  */
 export function continueRun(data: GameData, run: RunState): RunState {
   if (run.phase !== 'Resolve') throw new Error(`Cannot continue in phase ${run.phase}`);
@@ -67,10 +67,8 @@ export function continueRun(data: GameData, run: RunState): RunState {
   if (run.wavesWon < data.balance.wavesToBoss) {
     return setPhase(generateTileOffer(data, run), 'TileOffer');
   }
-  // 10 wins: the player places the boss room. With a single boss it goes to the hand directly.
-  const offered = setPhase(generateBossOffer(data, run), 'BossOffer');
-  const only = offered.tileOffer.length === 1 ? offered.tileOffer[0] : undefined;
-  return only ? chooseTile(offered, only.uid) : offered;
+  // 10 wins: the boss offer (one card in the prototype); the chosen boss room builds itself.
+  return setPhase(generateBossOffer(data, run), 'BossOffer');
 }
 
 /**

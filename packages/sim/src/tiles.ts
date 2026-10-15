@@ -1,5 +1,6 @@
 import type { GameData, RoomTypeDef } from '@loch/data';
 import { FORWARD_DIRS, feasibleExits, nextSlot, takenCells, tilesLeft } from './chain';
+import { legalPlacements, placeTile } from './dungeon';
 import { canonicalDoors } from './grid';
 import { dungeonLevel } from './level';
 import { setPhase } from './phases';
@@ -131,4 +132,18 @@ export function chooseTile(run: RunState, tileUid: string): RunState {
   const tile = run.tileOffer.find((t) => t.uid === tileUid);
   if (!tile) throw new Error(`Tile ${tileUid} is not in the offer`);
   return setPhase({ ...run, hand: [...run.hand, tile], tileOffer: [] }, 'Prep');
+}
+
+/**
+ * Takes a tile from the offer and builds it at once when it has exactly one legal position (every
+ * tile of the one-way chain, the boss included). A tile with several positions (a boss in a closed
+ * dungeon) or none stays in the hand for the player to place or discard.
+ */
+export function chooseAndPlaceTile(data: GameData, run: RunState, tileUid: string): RunState {
+  const chosen = chooseTile(run, tileUid);
+  const tile = chosen.hand.find((t) => t.uid === tileUid);
+  if (!tile) return chosen;
+  const spots = legalPlacements(data, chosen.dungeon, tile);
+  const only = spots.length === 1 ? spots[0] : undefined;
+  return only ? placeTile(data, chosen, tile.uid, only) : chosen;
 }

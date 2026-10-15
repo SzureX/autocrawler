@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { legalPlacements } from './dungeon';
+import { legalPlacements, placeTile } from './dungeon';
 import { createRun } from './run';
-import { chooseTile, generateBossOffer } from './tiles';
+import { chooseAndPlaceTile, chooseTile, generateBossOffer } from './tiles';
 import { generateSpawns } from './spawns';
 import { createRng } from './rng';
 import { randomBuild, testData } from './testing';
@@ -69,6 +69,68 @@ describe('tile offers', () => {
     expect(boss?.bossId).toBe('warden');
     expect(boss?.doors).toEqual(['W']);
     expect(boss?.spawns).toEqual([]);
+  });
+});
+
+describe('chooseAndPlaceTile', () => {
+  it('builds a chain tile at its only legal position and leaves the hand empty', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      for (const state of randomBuild(seed, 6)) {
+        for (const tile of state.tileOffer) {
+          const next = chooseAndPlaceTile(testData, state, tile.uid);
+          expect(next.phase).toBe('Prep');
+          expect(next.hand).toEqual([]);
+          expect(next.tileOffer).toEqual([]);
+          expect(Object.keys(next.dungeon.rooms)).toHaveLength(
+            Object.keys(state.dungeon.rooms).length + 1,
+          );
+          const spot = legalPlacements(testData, state.dungeon, tile);
+          expect(spot).toHaveLength(1);
+          const pos = spot[0];
+          const key = pos ? `${pos.x},${pos.y}` : '';
+          expect(next.dungeon.rooms[key]?.uid).toBe(tile.uid);
+        }
+      }
+    }
+  });
+
+  it('is the same as choosing and placing by hand', () => {
+    const run = createRun(testData, 3, 'warrior');
+    const pick = run.tileOffer[0];
+    if (!pick) throw new Error('no offer');
+    const byHand = chooseTile(run, pick.uid);
+    const pos = legalPlacements(testData, byHand.dungeon, pick)[0];
+    if (!pos) throw new Error('no placement');
+    expect(chooseAndPlaceTile(testData, run, pick.uid)).toEqual(
+      placeTile(testData, byHand, pick.uid, pos),
+    );
+  });
+
+  it('auto-places the boss tile when it has exactly one position', () => {
+    const run = generateBossOffer(testData, createRun(testData, 3, 'rogue'));
+    const boss = run.tileOffer[0];
+    if (!boss) throw new Error('no boss');
+    const spots = legalPlacements(testData, run.dungeon, boss).length;
+    const next = chooseAndPlaceTile(testData, { ...run, phase: 'BossOffer' }, boss.uid);
+    expect(next.hand).toHaveLength(spots === 1 ? 0 : 1);
+  });
+
+  it('keeps a tile without exactly one position in the hand', () => {
+    const run = createRun(testData, 3, 'warrior');
+    const pick = run.tileOffer[0];
+    if (!pick) throw new Error('no offer');
+    // A dungeon with no open door has no legal position for the tile.
+    const closed = {
+      ...run,
+      dungeon: {
+        ...run.dungeon,
+        rooms: Object.fromEntries(
+          Object.entries(run.dungeon.rooms).map(([k, r]) => [k, { ...r, doors: [] }]),
+        ),
+      },
+    };
+    const next = chooseAndPlaceTile(testData, closed, pick.uid);
+    expect(next.hand).toEqual([pick]);
   });
 });
 

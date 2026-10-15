@@ -3,6 +3,7 @@ import { loadGameData, type GameData } from '@loch/data';
 import { playRun } from './bots';
 import { simulateRaid } from './combat/raid';
 import { legalPlacements, placeTile } from './dungeon';
+import { chooseAndPlaceTile } from './tiles';
 import { continueRun, hasBossRoom, playRaid, resolveRaid, startRaid } from './flow';
 import { hashRaidLog } from './combat/raid';
 import { createRun } from './run';
@@ -90,6 +91,29 @@ describe('a won raid', () => {
   });
 });
 
+describe('the boss offer', () => {
+  it('after the tenth win shows one boss card, and choosing it builds the boss room at once', () => {
+    const data = mighty();
+    let run = createRun(data, 8, 'warrior');
+    for (let guard = 0; guard < 60 && run.phase !== 'BossOffer'; guard++) {
+      if (run.phase === 'TileOffer')
+        run = chooseAndPlaceTile(data, run, run.tileOffer[0]?.uid ?? '');
+      else if (run.phase === 'Prep') run = playRaid(data, run).run;
+      else if (run.phase === 'Resolve') run = continueRun(data, run);
+    }
+    expect(run.phase).toBe('BossOffer');
+    expect(run.wavesWon).toBe(data.balance.wavesToBoss);
+    expect(run.tileOffer).toHaveLength(1);
+    expect(run.hand).toEqual([]);
+    const boss = run.tileOffer[0];
+    if (!boss) throw new Error('no boss card');
+    const built = chooseAndPlaceTile(data, run, boss.uid);
+    expect(built.phase).toBe('Prep');
+    expect(built.hand).toEqual([]);
+    expect(hasBossRoom(built)).toBe(true);
+  });
+});
+
 describe('a lost raid', () => {
   it('costs a life, gives no tile, keeps the loot and returns to Prep on the same dungeon', () => {
     const data = feeble();
@@ -163,7 +187,9 @@ describe('bot runs through the whole state machine', () => {
       } else if (run.phase === 'Resolve') run = continueRun(data, run);
       seen.add(run.phase);
     }
-    expect([...seen].sort()).toEqual(['Prep', 'Resolve', 'TileOffer', 'Victory'].sort());
+    expect([...seen].sort()).toEqual(
+      ['BossOffer', 'Prep', 'Resolve', 'TileOffer', 'Victory'].sort(),
+    );
     expect(run.hand).toEqual([]);
   });
 
