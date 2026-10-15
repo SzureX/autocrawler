@@ -82,7 +82,7 @@ describe('layout choice', () => {
 
   it('the start room and the boss tile pick layouts for their own doors', () => {
     const custom = withLayouts([
-      layout({ id: 'start_only', doors: ['E'] }),
+      layout({ id: 'start_only', doors: ['E', 'W'] }),
       layout({ id: 'boss_w', roomTypeId: 'boss_room', doors: ['W'] }),
     ]);
     const run = createRun(custom, 5, 'warrior');

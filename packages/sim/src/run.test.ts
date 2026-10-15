@@ -21,7 +21,7 @@ describe('createRun', () => {
     expect(run.wavesWon).toBe(0);
     expect(run.equipped).toHaveLength(9);
     expect(Object.keys(run.dungeon.rooms)).toEqual(['0,4']);
-    expect(run.dungeon.rooms['0,4']?.doors).toEqual(['E']);
+    expect(run.dungeon.rooms['0,4']?.doors).toEqual(['E', 'W']);
     expect(run.dungeon.startKey).toBe('0,4');
   });
 

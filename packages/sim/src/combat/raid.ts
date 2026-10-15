@@ -5,7 +5,7 @@ import { dungeonLevel, levelStatMultiplier } from '../level';
 import { createRng, hashString } from '../rng';
 import { computeRaidRoute } from '../route';
 import type { Dir, RunState } from '../types';
-import { cheb, doorCell } from './board';
+import { cheb, doorCell, findStep, outsideCell } from './board';
 import { emit, type RaidContext } from './context';
 import { fightRoom } from './fight';
 import { planRaid } from './plan';
@@ -99,6 +99,7 @@ export function simulateRaid(
     from: Dir | null,
     chest: Cell | null = null,
     layoutId: string | null = null,
+    approach: Cell | null = null,
   ): void => {
     const room = run.dungeon.rooms[key];
     if (!room) throw new Error(`Route points at a missing room: ${key}`);
@@ -109,6 +110,7 @@ export function simulateRaid(
       roomTypeId: room.roomTypeId,
       upgradeId: room.upgradeId,
       entry,
+      approach,
       transit,
       exit,
       duration,
@@ -119,16 +121,43 @@ export function simulateRaid(
     });
   };
 
+  /** One step of the hero: a Move event, the time it takes, and his new cell. */
+  const heroWalk = (cell: Cell): void => {
+    emit(ctx, {
+      type: 'Move',
+      tick: ctx.tick,
+      unit: hero.id,
+      from: { x: hero.x, y: hero.y },
+      to: cell,
+      duration: tpc,
+    });
+    ctx.tick += tpc;
+    hero.x = cell.x;
+    hero.y = cell.y;
+  };
+  const isBlocked = (x: number, y: number): boolean => ctx.blocked[`${x},${y}`] === true;
+  /** Walks the hero (around the room's props) to the door on `dir` and out through it. */
+  const leaveRoom = (dir: Dir): void => {
+    const door = doorCell(combat.board, dir);
+    for (let guard = 0; guard < 200 && (hero.x !== door.x || hero.y !== door.y); guard++) {
+      heroWalk(findStep(combat.board, hero, door, 0, isBlocked) ?? door);
+    }
+    heroWalk(outsideCell(combat.board, dir));
+  };
+
   routeLoop: for (let i = 0; i < route.stops.length; i++) {
     const stopKey = route.stops[i];
     const path = route.paths[i];
     if (stopKey === undefined || !path) break;
     let entry: Cell;
+    let approach: Cell | null;
     let from: Dir | null = null;
     let travelled = 0;
 
     if (i === 0) {
-      entry = doorCell(combat.board, 'S');
+      // The hero walks in through the west door of the first room.
+      entry = doorCell(combat.board, 'W');
+      approach = outsideCell(combat.board, 'W');
     } else {
       // Walk from where the last fight ended, through cleared rooms, to the next stop.
       let pos: Cell = { x: hero.x, y: hero.y };
@@ -137,8 +166,16 @@ export function simulateRaid(
         const b = path[s + 1];
         if (a === undefined || b === undefined) break;
         const dir = directionBetween(a, b);
-        const walk = (cheb(pos, doorCell(combat.board, dir)) + 1) * tpc;
-        ctx.tick += walk;
+        let walk: number;
+        if (s === 0) {
+          // The hero walks to the door of the room he just cleared and out through it.
+          const startTick = ctx.tick;
+          leaveRoom(dir);
+          walk = ctx.tick - startTick;
+        } else {
+          walk = (cheb(pos, doorCell(combat.board, dir)) + 1) * tpc;
+          ctx.tick += walk;
+        }
         travelled = walk; // ticks spent reaching the room entered by this leg
         pos = doorCell(combat.board, OPPOSITE[dir]);
         from = dir;
@@ -154,6 +191,7 @@ export function simulateRaid(
         }
       }
       entry = pos;
+      approach = outsideCell(combat.board, from ? OPPOSITE[from] : 'W');
     }
 
     const room = run.dungeon.rooms[stopKey];
@@ -163,7 +201,27 @@ export function simulateRaid(
     const plan = plans[stopKey];
     const chestItems = plan?.chestItems ?? 0;
     const chestCell = chestItems > 0 ? { x: combat.chest.x, y: combat.chest.y } : null;
-    enterRoom(stopKey, entry, false, null, travelled, from, chestCell, room.layoutId ?? null);
+    enterRoom(
+      stopKey,
+      entry,
+      false,
+      null,
+      travelled,
+      from,
+      chestCell,
+      room.layoutId ?? null,
+      approach,
+    );
+    if (approach) {
+      // Walk in through the door, then the fight starts.
+      hero.x = approach.x;
+      hero.y = approach.y;
+      heroWalk(entry);
+      if (ctx.tick >= ctx.tickLimit) {
+        reason = 'timeout';
+        break;
+      }
+    }
 
     const mods = roomMods(room.upgradeId ? data.roomUpgrades[room.upgradeId] : undefined);
     const outcome = fightRoom(

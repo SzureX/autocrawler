@@ -103,10 +103,12 @@ describe('simulateRaid basics', () => {
       if (e.type === 'Move') {
         expect(s.pos[e.unit]).toEqual(e.from);
         expect(cheb(e.from, e.to)).toBe(1);
-        expect(e.to.x).toBeGreaterThanOrEqual(0);
-        expect(e.to.y).toBeGreaterThanOrEqual(0);
-        expect(e.to.x).toBeLessThan(board.width);
-        expect(e.to.y).toBeLessThan(board.height);
+        // Only the hero leaves the board, one step outside a door when walking in or out.
+        const margin = e.unit === 0 ? 1 : 0;
+        expect(e.to.x).toBeGreaterThanOrEqual(-margin);
+        expect(e.to.y).toBeGreaterThanOrEqual(-margin);
+        expect(e.to.x).toBeLessThan(board.width + margin);
+        expect(e.to.y).toBeLessThan(board.height + margin);
         const others = Object.entries(s.pos).filter(([id]) => Number(id) !== e.unit);
         expect(others.map(([, p]) => p)).not.toContainEqual(e.to);
       }
@@ -706,6 +708,69 @@ describe('raid end conditions', () => {
       ['4,4', true],
       ['5,4', false],
     ]);
+  });
+});
+
+describe('walking through the doors', () => {
+  const chain = () =>
+    scenario({
+      rooms: [
+        { x: 4, y: 4, doors: ['E', 'W'], spawns: [rat] },
+        { x: 5, y: 4, doors: ['W', 'E'], spawns: [rat] },
+        { x: 6, y: 4, doors: ['W'], spawns: [rat] },
+      ],
+    });
+
+  it('the hero walks into the first room through its west door', () => {
+    const { data, run } = chain();
+    const { log } = simulateRaid(data, run);
+    const board = data.balance.combat.board;
+    const first = events(log, 'RoomEnter')[0];
+    const cy = Math.floor(board.height / 2);
+    expect(first?.entry).toEqual({ x: 0, y: cy });
+    expect(first?.approach).toEqual({ x: -1, y: cy });
+    const i = log.findIndex((e) => e.type === 'RoomEnter');
+    const step = log[i + 1];
+    expect(step).toMatchObject({ type: 'Move', unit: 0, tick: first?.tick });
+    expect(step?.type === 'Move' && step.to).toEqual(first?.entry);
+  });
+
+  it('after a cleared room the hero walks to the exit door and out, then in through the next door', () => {
+    const { data, run } = chain();
+    const board = data.balance.combat.board;
+    const { log } = simulateRaid(data, run);
+    const cy = Math.floor(board.height / 2);
+    const enters = events(log, 'RoomEnter');
+    expect(enters.map((e) => e.roomKey)).toEqual(['4,4', '5,4', '6,4']);
+    const second = enters[1];
+    // He enters the next room through its west door, from just outside it.
+    expect(second?.entry).toEqual({ x: 0, y: cy });
+    expect(second?.approach).toEqual({ x: -1, y: cy });
+    // Right before it he stepped out of the east door of the cleared room.
+    const at = log.findIndex((e) => e === second);
+    const out = log
+      .slice(0, at)
+      .filter((e) => e.type === 'Move' && e.unit === 0)
+      .pop();
+    expect(out?.type === 'Move' && out.to).toEqual({ x: board.width, y: cy });
+    // Every step of the hero is one cell, also the ones through the doors.
+    for (const e of events(log, 'Move')) {
+      if (e.unit === 0) expect(cheb(e.from, e.to)).toBe(1);
+    }
+  });
+
+  it('the last room has no exit walk: the raid ends there', () => {
+    const { data, run } = chain();
+    const { log } = simulateRaid(data, run);
+    const last = log.findIndex((e) => e === events(log, 'RoomEnter')[2]);
+    const after = log.slice(last).filter((e) => e.type === 'Move' && e.unit === 0);
+    const board = data.balance.combat.board;
+    for (const e of after) {
+      if (e.type === 'Move') {
+        expect(e.to.x).toBeGreaterThanOrEqual(-1);
+        expect(e.to.x).toBeLessThanOrEqual(board.width - 1);
+      }
+    }
   });
 });
 

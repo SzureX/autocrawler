@@ -36,10 +36,10 @@ function buildChain(seed: number): RunState[] {
 }
 
 describe('one-way chain', () => {
-  it('starts on the middle of the left edge with a single east door', () => {
+  it('starts on the middle of the left edge with an east exit and a west entrance', () => {
     const run = createRun(testData, 5, 'warrior');
     expect(run.dungeon.startKey).toBe('0,4');
-    expect(run.dungeon.rooms['0,4']?.doors).toEqual(['E']);
+    expect(run.dungeon.rooms['0,4']?.doors).toEqual(['E', 'W']);
     expect(openExit(run.dungeon)).toBe('E');
   });
 

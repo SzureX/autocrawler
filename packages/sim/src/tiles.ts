@@ -67,11 +67,14 @@ export function createStartTile(data: GameData, seed: number): RoomTile {
   if (!chamber) throw new Error('Missing chamber room type');
   const uid = 'tile-0';
   const spawns = generateSpawns(data, createRng(seed).fork(`spawns:${uid}`), chamber, 1);
-  const layoutId = pickLayoutId(data, createRng(seed).fork(`layout:${uid}`), chamber.id, ['E']);
+  const layoutId = pickLayoutId(data, createRng(seed).fork(`layout:${uid}`), chamber.id, [
+    'E',
+    'W',
+  ]);
   return {
     uid,
     roomTypeId: chamber.id,
-    doors: ['E'],
+    doors: ['E', 'W'],
     spawns,
     isBoss: false,
     ...(layoutId ? { layoutId } : {}),

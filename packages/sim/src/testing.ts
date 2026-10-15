@@ -145,7 +145,7 @@ export function replay(
         state.maxHp[0] = e.heroMaxHp;
         break;
       case 'RoomEnter':
-        state.pos[0] = { ...e.entry };
+        state.pos[0] = { ...(e.approach ?? e.entry) };
         break;
       case 'Spawn':
         state.pos[e.unit] = { x: e.x, y: e.y };

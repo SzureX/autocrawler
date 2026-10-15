@@ -22,6 +22,21 @@ export function doorCell(board: BoardSize, dir: Dir): Cell {
   }
 }
 
+/** The cell just outside the board, in front of the door on `dir` (where a hero walks in from). */
+export function outsideCell(board: BoardSize, dir: Dir): Cell {
+  const door = doorCell(board, dir);
+  switch (dir) {
+    case 'N':
+      return { x: door.x, y: door.y - 1 };
+    case 'S':
+      return { x: door.x, y: door.y + 1 };
+    case 'W':
+      return { x: door.x - 1, y: door.y };
+    case 'E':
+      return { x: door.x + 1, y: door.y };
+  }
+}
+
 /** Range metric: Chebyshev distance (diagonals cost 1). */
 export function cheb(a: Cell, b: Cell): number {
   return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));

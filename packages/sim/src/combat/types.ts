@@ -34,8 +34,13 @@ export type RaidEvent =
       roomKey: string;
       roomTypeId: string;
       upgradeId: string | null;
-      /** Cell where the hero appears (the door he came through). */
+      /** Cell where the hero ends up before the fight (the door he came through). */
       entry: Cell;
+      /**
+       * Cell outside that door where the hero first appears; he walks from there to `entry`
+       * (a `Move` follows at the same tick). Null: he simply appears on `entry`.
+       */
+      approach: Cell | null;
       /** Pass-through room (already cleared); the hero crosses it to `exit` in `duration` ticks. */
       transit: boolean;
       exit: Cell | null;
