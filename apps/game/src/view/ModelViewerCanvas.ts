@@ -103,6 +103,7 @@ export class ModelViewerCanvas {
     this.destroyed = true;
     this.renderer?.setAnimationLoop(null);
     this.renderer?.dispose();
+    this.renderer?.forceContextLoss();
     this.renderer?.domElement.remove();
     this.renderer = null;
   }

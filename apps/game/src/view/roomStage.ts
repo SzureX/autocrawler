@@ -45,6 +45,8 @@ export class RoomStage {
   readonly group = new Group();
   private content = new Group();
   private readonly board: BoardSize;
+  /** The wall facing the camera is low in the raid, so it never hides the fight. */
+  private readonly lowSouth: boolean;
   private models: ModelLibrary | null = null;
   private floors: Group | null = null;
   private walls: Group | null = null;
@@ -56,8 +58,11 @@ export class RoomStage {
   private readonly floorB = new MeshStandardMaterial({ color: DEFAULT_THEME.b, roughness: 0.9 });
   private theme: string | null = null;
 
-  constructor(board: BoardSize) {
+  /** `lights: false` leaves the lighting to the scene (a map holds many rooms in one scene);
+   * `fullWalls` keeps the wall nearest to the camera at full height too. */
+  constructor(board: BoardSize, options: { lights?: boolean; fullWalls?: boolean } = {}) {
     this.board = board;
+    this.lowSouth = !(options.fullWalls ?? false);
     this.group.add(this.content);
     const content = this.content;
     const tile = new PlaneGeometry(0.98, 0.98);
@@ -116,19 +121,21 @@ export class RoomStage {
       content.add(mesh);
     }
 
-    this.group.add(new AmbientLight(0xffffff, 0.6));
-    const sun = new DirectionalLight(0xffffff, 1.9);
-    sun.position.set(4, 9, 5);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(1024, 1024);
-    const cam = sun.shadow.camera;
-    cam.left = -8;
-    cam.right = 8;
-    cam.top = 8;
-    cam.bottom = -8;
-    cam.near = 1;
-    cam.far = 30;
-    this.group.add(sun);
+    if (options.lights ?? true) {
+      this.group.add(new AmbientLight(0xffffff, 0.6));
+      const sun = new DirectionalLight(0xffffff, 1.9);
+      sun.position.set(4, 9, 5);
+      sun.castShadow = true;
+      sun.shadow.mapSize.set(1024, 1024);
+      const cam = sun.shadow.camera;
+      cam.left = -8;
+      cam.right = 8;
+      cam.top = 8;
+      cam.bottom = -8;
+      cam.near = 1;
+      cam.far = 30;
+      this.group.add(sun);
+    }
   }
 
   /** Tints the floor for a room type (no-op when unchanged). */
@@ -227,7 +234,7 @@ export class RoomStage {
     if (!models) return;
     if (this.walls) this.content.remove(this.walls);
     const walls = new Group();
-    for (const w of wallPlacements(this.board, this.doors)) {
+    for (const w of wallPlacements(this.board, this.doors, this.lowSouth)) {
       const piece = models.create(w.model, false);
       if (!piece) continue;
       piece.scale.set(MODEL_SCALE * w.sx, MODEL_SCALE * w.sy, MODEL_SCALE);

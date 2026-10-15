@@ -531,3 +531,174 @@ button.active {
 .menu-credits a {
   color: #8fb0ff;
 }
+
+.map-frame {
+  position: relative;
+  flex: none;
+}
+.dungeon-map {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #2a3040;
+  background: #0b0d12;
+}
+.dungeon-map-canvas {
+  position: absolute;
+  inset: 0;
+}
+.dungeon-map-canvas canvas {
+  display: block;
+}
+.map-cell {
+  position: absolute;
+  pointer-events: none;
+}
+.map-hit {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  clip-path: var(--poly);
+  pointer-events: auto;
+  cursor: default;
+}
+.map-hit.assignable,
+.map-hit.legal {
+  cursor: pointer;
+}
+.map-hit.assignable {
+  background: rgba(242, 193, 78, 0.14);
+}
+.map-hit.assignable:hover {
+  background: rgba(242, 193, 78, 0.3);
+}
+.map-hit.legal:hover {
+  background: rgba(76, 175, 112, 0.3);
+}
+.map-hit.drop-over {
+  background: rgba(242, 193, 78, 0.4);
+}
+.map-upgrade {
+  position: absolute;
+  right: 8%;
+  top: 16%;
+  font-size: 26px;
+  pointer-events: none;
+  text-shadow: 0 1px 4px #000;
+}
+.map-cell .tooltip {
+  display: none;
+  position: absolute;
+  left: 50%;
+  top: 30%;
+  z-index: 20;
+  min-width: 190px;
+  padding: 6px 8px;
+  background: #0d0f14;
+  border: 1px solid #5a6a9a;
+  text-align: left;
+  font-size: 12px;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+}
+.map-cell:hover .tooltip {
+  display: flex;
+}
+
+.offer-popup {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(8, 10, 15, 0.55);
+  transition: opacity 0.25s;
+}
+.offer-popup.leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+.offer-popup h2 {
+  margin: 0 0 8px;
+}
+.offer-cards {
+  display: flex;
+  gap: 20px;
+}
+.offer-card {
+  width: 270px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  text-align: left;
+  background: #20242e;
+  border: 1px solid #3a4152;
+  border-radius: 10px;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    border-color 0.15s;
+}
+.offer-card:hover:not(:disabled) {
+  transform: translateY(-6px);
+  border-color: #8fb0ff;
+}
+.offer-card:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.card-preview {
+  width: 250px;
+  height: 170px;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.card-preview canvas {
+  display: block;
+}
+.offer-card-name {
+  font-size: 20px;
+}
+.offer-card-desc {
+  font-size: 14px;
+  color: #aab4c8;
+  min-height: 36px;
+}
+.offer-card-spawns {
+  font-size: 13px;
+}
+.offer-card.punched {
+  animation: card-punch 0.35s ease-in forwards;
+}
+.offer-card.dismissed {
+  opacity: 0;
+  transform: scale(0.9);
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
+}
+@keyframes card-punch {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  20% {
+    transform: translateY(6px) scale(0.96, 0.94);
+  }
+  60% {
+    transform: translateY(-34px) scale(1.1) rotate(-4deg);
+  }
+  100% {
+    transform: translateY(-60px) scale(1.15) rotate(-4deg);
+    opacity: 0.25;
+  }
+}

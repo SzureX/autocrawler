@@ -9,7 +9,7 @@ import {
   type RaidResult,
   assignUpgrade,
   removeUpgrade,
-  chooseTile,
+  chooseAndPlaceTile,
   createRun,
   debugForcePhase,
   equip,
@@ -78,7 +78,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   setRun: (run) => set({ run }),
   chooseTile: (tileUid) => {
     const { run } = get();
-    if (run) set({ run: chooseTile(run, tileUid) });
+    if (run) set({ run: chooseAndPlaceTile(gameData, run, tileUid) });
   },
   placeTile: (tileUid, pos) => {
     const { run } = get();

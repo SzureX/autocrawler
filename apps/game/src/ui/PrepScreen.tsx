@@ -1,14 +1,26 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from '@dnd-kit/core';
-import { backpackStacks, estimateThreat, legalPlacements, type RunState } from '@loch/sim';
+import {
+  backpackStacks,
+  estimateThreat,
+  legalPlacements,
+  posKey,
+  type RoomTile,
+  type RunState,
+} from '@loch/sim';
 import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
+import { reducedMotion } from '../view/motion';
 import { useStageScale } from './Stage';
 import { DragButton, parseDrag, parseDrop, upgradeDragId } from './dnd';
-import { DungeonGrid } from './DungeonGrid';
+import { DungeonMap, MAP_HEIGHT, MAP_WIDTH, type MapHandle } from './DungeonMap';
 import { InventoryPanel } from './InventoryPanel';
 import { upgradeName } from './names';
+import { TileOfferPopup } from './TileOfferPopup';
 import { TileView } from './TileView';
+
+/** Time the chosen card punches before its room takes off. */
+const PUNCH_MS = 350;
 
 function ThreatBadge({ run }: { run: RunState }) {
   const threat = useMemo(() => estimateThreat(gameData, run), [run]);
@@ -36,6 +48,47 @@ export function PrepScreen({ run }: { run: RunState }) {
   const scale = useStageScale();
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const tile = run.hand[0];
+  const offer = run.phase === 'TileOffer' || run.phase === 'BossOffer';
+  const chooseTile = useGameStore((s) => s.chooseTile);
+  const map = useRef<MapHandle | null>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const mounted = useRef(true);
+  const [chosenUid, setChosenUid] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState(false);
+  // A stale choice (from an earlier offer) is ignored.
+  const chosen = chosenUid && run.tileOffer.some((t) => t.uid === chosenUid) ? chosenUid : null;
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  /** The card is punched, the room jumps out of it and flies to its place on the map. */
+  const onChoose = (picked: RoomTile, card: HTMLElement) => {
+    if (chosen) return;
+    const spots = legalPlacements(gameData, run.dungeon, picked);
+    const only = spots.length === 1 ? spots[0] : undefined;
+    if (!only || !map.current || !frame.current || reducedMotion()) {
+      chooseTile(picked.uid);
+      return;
+    }
+    const f = frame.current.getBoundingClientRect();
+    const c = card.getBoundingClientRect();
+    const from = {
+      x: (c.left + c.width / 2 - f.left) / scale,
+      y: (c.top + c.height * 0.3 - f.top) / scale,
+    };
+    setChosenUid(picked.uid);
+    setLeaving(false);
+    window.setTimeout(() => {
+      if (!mounted.current) return;
+      setLeaving(true);
+      void map.current?.fly(picked, posKey(only), from).then(() => {
+        if (mounted.current) chooseTile(picked.uid);
+      });
+    }, PUNCH_MS);
+  };
   const noSpot = tile ? legalPlacements(gameData, run.dungeon, tile).length === 0 : false;
   const selected =
     selectedUpgrade && run.upgradeStorage.includes(selectedUpgrade) ? selectedUpgrade : null;
@@ -74,18 +127,35 @@ export function PrepScreen({ run }: { run: RunState }) {
       <section className="screen prep" data-testid="prep-screen">
         <h2>{t('ui.prep.title')}</h2>
         <div className="prep-layout">
-          <DungeonGrid
-            run={run}
-            tile={tile}
-            onPlace={(pos) => tile && placeTile(tile.uid, pos)}
-            selectedUpgrade={selected}
-            onRoomClick={(key) => {
-              if (selected) {
-                assignUpgrade(key, selected);
-                setSelectedUpgrade(null);
-              } else removeUpgrade(key);
-            }}
-          />
+          <div
+            ref={frame}
+            className="map-frame"
+            style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
+            data-testid="map-frame"
+          >
+            <DungeonMap
+              run={run}
+              tile={tile}
+              handleRef={map}
+              onPlace={(pos) => tile && placeTile(tile.uid, pos)}
+              selectedUpgrade={selected}
+              onRoomClick={(key) => {
+                if (selected) {
+                  assignUpgrade(key, selected);
+                  setSelectedUpgrade(null);
+                } else removeUpgrade(key);
+              }}
+            />
+            {offer && (
+              <TileOfferPopup
+                tiles={run.tileOffer}
+                title={t(run.phase === 'BossOffer' ? 'ui.offer.bossTitle' : 'ui.offer.title')}
+                chosen={chosen}
+                leaving={leaving && chosen !== null}
+                onChoose={onChoose}
+              />
+            )}
+          </div>
           <aside className="side">
             <h3>{t('ui.prep.hand')}</h3>
             {tile ? <TileView tile={tile} /> : <p>{t('ui.prep.handEmpty')}</p>}
@@ -121,7 +191,7 @@ export function PrepScreen({ run }: { run: RunState }) {
             <ThreatBadge run={run} />
             <button
               type="button"
-              disabled={run.hand.length > 0}
+              disabled={offer || run.hand.length > 0}
               onClick={startRaid}
               data-testid="start-raid"
             >

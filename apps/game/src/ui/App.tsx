@@ -8,7 +8,6 @@ import { MainMenu } from './MainMenu';
 import { PrepScreen } from './PrepScreen';
 import { RaidScreen } from './RaidScreen';
 import { ResolveScreen } from './ResolveScreen';
-import { TileOfferScreen } from './TileOfferScreen';
 
 export function App() {
   const run = useGameStore((s) => s.run);
@@ -53,10 +52,9 @@ export function App() {
         </span>
       </header>
       {!run && <ClassSelectScreen />}
-      {run && (run.phase === 'TileOffer' || run.phase === 'BossOffer') && (
-        <TileOfferScreen run={run} />
+      {run && (run.phase === 'TileOffer' || run.phase === 'BossOffer' || run.phase === 'Prep') && (
+        <PrepScreen run={run} />
       )}
-      {run && run.phase === 'Prep' && <PrepScreen run={run} />}
       {run && run.phase === 'Action' && <RaidScreen run={run} />}
       {run && run.phase === 'Resolve' && <ResolveScreen run={run} />}
       {run && (run.phase === 'Victory' || run.phase === 'GameOver') && <EndScreen run={run} />}

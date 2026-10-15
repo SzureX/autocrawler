@@ -26,7 +26,11 @@ export interface WallPlacement {
  * each side. West and east own the corners: a doorway (or arch), then an arch and a half wall on
  * each side. A side listed in `doors` gets a doorway; the others a plain arched wall.
  */
-export function wallPlacements(board: BoardSize, doors: readonly Side[]): WallPlacement[] {
+export function wallPlacements(
+  board: BoardSize,
+  doors: readonly Side[],
+  lowSouth = true,
+): WallPlacement[] {
   const halfW = board.width / 2;
   const halfH = board.height / 2;
   const out: WallPlacement[] = [];
@@ -36,7 +40,7 @@ export function wallPlacements(board: BoardSize, doors: readonly Side[]): WallPl
   const archScale = span / 2 / (4 * MODEL_SCALE);
   const ends: [Side, number, number, number][] = [
     ['N', -(halfH + WALL_OFFSET), 0, 1],
-    ['S', halfH + WALL_OFFSET, Math.PI, LOW_WALL],
+    ['S', halfH + WALL_OFFSET, Math.PI, lowSouth ? LOW_WALL : 1],
   ];
   for (const [side, z, yaw, sy] of ends) {
     out.push({ model: middle(side), x: 0, z, yaw, sx: 1, sy });

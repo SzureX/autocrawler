@@ -2,7 +2,7 @@
 import { expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { buildHand, shot, startAndBuild, trackErrors } from './helpers';
+import { shot, startAndBuild, trackErrors } from './helpers';
 
 test('room tooltip shows type, monsters and upgrade', async ({ page }) => {
   const errors = trackErrors(page);
@@ -71,14 +71,13 @@ test('equipping shows a before/after diff, drag and drop works like clicking', a
   expect(errors).toEqual([]);
 });
 
-test('Start is blocked until the tile is built', async ({ page }) => {
+test('a chosen tile builds itself, so Start is enabled right away', async ({ page }) => {
   await page.goto('/?seed=5');
   await page.getByTestId('menu-new-game').click();
   await page.getByTestId('class-warrior').getByRole('button').click();
   await page.locator('[data-testid^="take-"]').first().click();
-  await expect(page.getByTestId('start-raid')).toBeDisabled();
-  await buildHand(page);
   await expect(page.getByTestId('start-raid')).toBeEnabled();
+  await expect(page.getByTestId('cell-1,4')).toBeVisible();
 });
 
 test('a lost raid costs a life and the game ends after five defeats', async ({ page }) => {
@@ -99,7 +98,7 @@ test('a lost raid costs a life and the game ends after five defeats', async ({ p
   expect(errors).toEqual([]);
 });
 
-test('ten wins then the player places the boss room and wins', async ({ page }) => {
+test('ten wins then the boss card builds the boss room and the run is won', async ({ page }) => {
   const errors = trackErrors(page);
   await page.goto('/?seed=3');
   await page.getByTestId('menu-new-game').click();
@@ -107,10 +106,12 @@ test('ten wins then the player places the boss room and wins', async ({ page }) 
   await page.getByTestId('debug-waves-9').click();
   await page.getByTestId('debug-win-raid').click();
   await page.getByTestId('resolve-continue').click();
-  // The boss room is now in hand (single boss: chosen automatically) and must be built.
+  // The boss offer is one card; choosing it builds the boss room at once.
+  await expect(page.locator('[data-testid^="take-"]')).toHaveCount(1);
   await expect(page.getByTestId('start-raid')).toBeDisabled();
-  await shot(page, 'm6c-boss-placement');
-  await buildHand(page);
+  await shot(page, 'm6c-boss-offer');
+  await page.locator('[data-testid^="take-"]').first().click();
+  await expect(page.getByTestId('start-raid')).toBeEnabled();
   await page.getByTestId('debug-win-raid').click();
   await page.getByTestId('resolve-continue').click();
   await expect(page.getByTestId('end-screen')).toHaveAttribute('data-outcome', 'Victory');
@@ -128,4 +129,23 @@ test('the stage is letterboxed and keeps the 16:9 ratio', async ({ page }) => {
   expect(box.width).toBeLessThanOrEqual(1280.5);
   expect(box.height).toBeLessThanOrEqual(900.5);
   await shot(page, 'm6d-letterbox');
+});
+
+test('a chosen tile flies onto the map and builds the room', async ({ page }) => {
+  const errors = trackErrors(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/?seed=5');
+  await page.getByTestId('menu-new-game').click();
+  await page.getByTestId('class-warrior').getByRole('button').click();
+  await expect(page.getByTestId('offer-popup')).toBeVisible();
+  await expect(page.locator('[data-testid^="take-"]')).toHaveCount(3);
+  await page.waitForTimeout(1500); // the 3D pictures on the cards need a moment
+  await shot(page, 'map-offer-popup');
+  await page.locator('[data-testid^="take-"]').first().click();
+  await expect(page.getByTestId('cell-1,4')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('start-raid')).toBeEnabled({ timeout: 30_000 });
+  await expect(page.getByTestId('offer-popup')).toHaveCount(0);
+  await page.waitForTimeout(1200);
+  await shot(page, 'map-two-rooms');
+  expect(errors).toEqual([]);
 });

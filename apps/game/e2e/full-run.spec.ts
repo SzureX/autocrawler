@@ -58,6 +58,12 @@ test('a bot plays a whole run through the UI (skip mode) and reaches the end scr
       await page.getByTestId('raid-skip').click();
       await expect(page.getByTestId('raid-outcome')).toBeVisible();
       await page.getByTestId('to-summary').click();
+    } else if ((await page.locator('[data-testid^="take-"]').count()) > 0) {
+      if (!seen['offer']) {
+        seen['offer'] = true;
+        await shot(page, 'm6a-tile-offer');
+      }
+      await page.locator('[data-testid^="take-"]').first().click();
     } else if (await page.getByTestId('prep-screen').isVisible()) {
       await buildHand(page).catch(() => undefined);
       await equipAll(page);
@@ -68,12 +74,6 @@ test('a bot plays a whole run through the UI (skip mode) and reaches the end scr
         await shot(page, 'm6b-prep');
       }
       await page.getByTestId('start-raid').click();
-    } else if ((await page.locator('[data-testid^="take-"]').count()) > 0) {
-      if (!seen['offer']) {
-        seen['offer'] = true;
-        await shot(page, 'm6a-tile-offer');
-      }
-      await page.locator('[data-testid^="take-"]').first().click();
     } else {
       await page.waitForTimeout(100);
     }
