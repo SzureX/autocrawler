@@ -134,7 +134,7 @@ export interface RoomPreset {
  */
 export const ROOM_PRESETS: RoomPreset[] = (() => {
   const presets: RoomPreset[] = [{ id: 'all', kind: 'all', doors: [...SIDES] }];
-  presets.push({ id: 'start', kind: 'start', doors: ['E'], exit: 'E' });
+  presets.push({ id: 'start', kind: 'start', doors: ['E', 'W'], exit: 'E' });
   // The previous room's exit is N, E or S, so the entrance is S, W or N.
   for (const entrance of ['W', 'N', 'S'] as const) {
     for (const exit of ['N', 'E', 'S'] as const) {

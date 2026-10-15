@@ -11,6 +11,7 @@ import {
 import { t } from '../i18n';
 import { gameData, useGameStore } from '../store/gameStore';
 import { reducedMotion } from '../view/motion';
+import { clearBridge, peekBridge, setBridge } from './bridge';
 import { useStageScale } from './Stage';
 import { DragButton, parseDrag, parseDrop, upgradeDragId } from './dnd';
 import { DungeonMap, MAP_HEIGHT, MAP_WIDTH, type MapHandle } from './DungeonMap';
@@ -55,6 +56,14 @@ export function PrepScreen({ run }: { run: RunState }) {
   const mounted = useRef(true);
   const [chosenUid, setChosenUid] = useState<string | null>(null);
   const [leaving, setLeaving] = useState(false);
+  // Coming back from a raid: the picture of the last room fades out over the map pulling back.
+  const [bridge] = useState(peekBridge);
+  useEffect(() => {
+    clearBridge();
+  }, []);
+  const [intro, setIntro] = useState(bridge?.roomKey != null);
+  const [bridgeShown, setBridgeShown] = useState(bridge !== null);
+  const [starting, setStarting] = useState(false);
   // A stale choice (from an earlier offer) is ignored.
   const chosen = chosenUid && run.tileOffer.some((t) => t.uid === chosenUid) ? chosenUid : null;
   useEffect(() => {
@@ -63,6 +72,20 @@ export function PrepScreen({ run }: { run: RunState }) {
       mounted.current = false;
     };
   }, []);
+
+  /** Start: the camera flies into the first room, then the raid takes over from that picture. */
+  const onStart = () => {
+    const start = run.dungeon.startKey;
+    if (!map.current || reducedMotion()) {
+      startRaid();
+      return;
+    }
+    setStarting(true);
+    void map.current.flyToRoom(start).then(() => {
+      setBridge(map.current?.snapshot() ?? null, start);
+      startRaid();
+    });
+  };
 
   /** The card is punched, the room jumps out of it and flies to its place on the map. */
   const onChoose = (picked: RoomTile, card: HTMLElement) => {
@@ -130,13 +153,19 @@ export function PrepScreen({ run }: { run: RunState }) {
           <div
             ref={frame}
             className="map-frame"
-            style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}
+            style={{
+              width: MAP_WIDTH,
+              height: MAP_HEIGHT,
+              pointerEvents: starting || intro ? 'none' : undefined,
+            }}
             data-testid="map-frame"
           >
             <DungeonMap
               run={run}
               tile={tile}
               handleRef={map}
+              introRoom={bridge?.roomKey ?? null}
+              onIntroDone={() => setIntro(false)}
               onPlace={(pos) => tile && placeTile(tile.uid, pos)}
               selectedUpgrade={selected}
               onRoomClick={(key) => {
@@ -146,7 +175,15 @@ export function PrepScreen({ run }: { run: RunState }) {
                 } else removeUpgrade(key);
               }}
             />
-            {offer && (
+            {bridgeShown && bridge && (
+              <img
+                className="bridge-fade"
+                src={bridge.image}
+                alt=""
+                onAnimationEnd={() => setBridgeShown(false)}
+              />
+            )}
+            {offer && !intro && (
               <TileOfferPopup
                 tiles={run.tileOffer}
                 title={t(run.phase === 'BossOffer' ? 'ui.offer.bossTitle' : 'ui.offer.title')}
@@ -191,8 +228,8 @@ export function PrepScreen({ run }: { run: RunState }) {
             <ThreatBadge run={run} />
             <button
               type="button"
-              disabled={offer || run.hand.length > 0}
-              onClick={startRaid}
+              disabled={offer || run.hand.length > 0 || starting || intro}
+              onClick={onStart}
               data-testid="start-raid"
             >
               {t('ui.prep.start')}

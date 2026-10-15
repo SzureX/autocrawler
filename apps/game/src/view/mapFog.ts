@@ -18,6 +18,7 @@ void main() {
 const FRAGMENT = `
 #define MAX_ROOMS ${MAX_FOG_ROOMS}
 uniform vec4 uRooms[MAX_ROOMS];
+uniform float uWeights[MAX_ROOMS];
 uniform int uCount;
 uniform float uTime;
 uniform float uScale;
@@ -57,7 +58,8 @@ void main() {
     if (i >= uCount) break;
     vec4 r = uRooms[i];
     vec2 q = max(vec2(r.x - vWorld.x, r.y - vWorld.y), vec2(vWorld.x - r.z, vWorld.y - r.w));
-    d = min(d, length(max(q, 0.0)));
+    // A room with a low weight counts as far away, so the fog closes over it.
+    d = min(d, length(max(q, 0.0)) + (1.0 - uWeights[i]) * 14.0);
   }
   float t = smoothstep(0.0, uReach, d);
   vec2 drift = vec2(uTime * uSpeed, uTime * uSpeed * 0.55);
@@ -80,6 +82,7 @@ export class MapFog {
   readonly group = new Group();
   private readonly materials: ShaderMaterial[] = [];
   private readonly rects: Vector4[] = Array.from({ length: MAX_FOG_ROOMS }, () => new Vector4());
+  private readonly weights: number[] = Array.from({ length: MAX_FOG_ROOMS }, () => 1);
   private readonly geometry: PlaneGeometry;
   private readonly count = { value: 0 };
   private readonly time = { value: 0 };
@@ -89,7 +92,7 @@ export class MapFog {
     this.geometry = new PlaneGeometry(size.x, size.z).rotateX(-Math.PI / 2);
     const layers = [
       { y: 0.35, scale: 0.05, speed: 0.12, thin: 0.45, thick: 0.9 },
-      { y: 1.5, scale: 0.032, speed: 0.07, thin: 0.3, thick: 0.75 },
+      { y: 2.3, scale: 0.032, speed: 0.07, thin: 0.3, thick: 0.75 },
     ];
     for (const layer of layers) {
       const material = new ShaderMaterial({
@@ -99,6 +102,7 @@ export class MapFog {
         depthWrite: false,
         uniforms: {
           uRooms: { value: this.rects },
+          uWeights: { value: this.weights },
           uCount: this.count,
           uTime: this.time,
           uScale: { value: layer.scale },
@@ -118,12 +122,15 @@ export class MapFog {
     }
   }
 
-  /** The areas that are rooms (or about to be): the fog stays away from them. */
-  setRects(rects: readonly WorldRect[]): void {
-    const count = Math.min(rects.length, MAX_FOG_ROOMS);
+  /** The rooms (or about to be): the fog stays away from them, less so with a lower weight. */
+  setRooms(rooms: readonly { rect: WorldRect; weight: number }[]): void {
+    const count = Math.min(rooms.length, MAX_FOG_ROOMS);
     for (let i = 0; i < count; i++) {
-      const r = rects[i];
-      if (r) this.rects[i]?.set(r.minX, r.minZ, r.maxX, r.maxZ);
+      const room = rooms[i];
+      if (!room) continue;
+      const r = room.rect;
+      this.rects[i]?.set(r.minX, r.minZ, r.maxX, r.maxZ);
+      this.weights[i] = room.weight;
     }
     this.count.value = count;
   }

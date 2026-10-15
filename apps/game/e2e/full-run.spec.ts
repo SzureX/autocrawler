@@ -57,7 +57,7 @@ test('a bot plays a whole run through the UI (skip mode) and reaches the end scr
       }
       await page.getByTestId('raid-skip').click();
       await expect(page.getByTestId('raid-outcome')).toBeVisible();
-      await page.getByTestId('to-summary').click();
+      await page.getByTestId('summary-continue').click();
     } else if ((await page.locator('[data-testid^="take-"]').count()) > 0) {
       if (!seen['offer']) {
         seen['offer'] = true;

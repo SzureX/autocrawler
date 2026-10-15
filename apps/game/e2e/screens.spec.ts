@@ -149,3 +149,33 @@ test('a chosen tile flies onto the map and builds the room', async ({ page }) =>
   await shot(page, 'map-two-rooms');
   expect(errors).toEqual([]);
 });
+
+test('Start flies into the first room, the wave popup shows, and the summary leads back to the map', async ({
+  page,
+}) => {
+  const errors = trackErrors(page);
+  await page.emulateMedia({ reducedMotion: 'no-preference' });
+  await page.goto('/?seed=5');
+  await page.getByTestId('menu-new-game').click();
+  await page.getByTestId('class-warrior').getByRole('button').click();
+  await expect(page.getByTestId('offer-popup')).toBeVisible();
+  await page.waitForTimeout(1500);
+  await page.locator('[data-testid^="take-"]').first().click();
+  await expect(page.getByTestId('start-raid')).toBeEnabled({ timeout: 30_000 });
+  await page.waitForTimeout(1500);
+  await page.getByTestId('start-raid').click();
+  await expect(page.getByTestId('raid-screen')).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByTestId('wave-popup')).toContainText('1/10');
+  await shot(page, 'flow-wave-popup');
+  await expect(page.getByTestId('wave-popup')).toHaveCount(0, { timeout: 10_000 });
+  await page.waitForTimeout(1500);
+  await shot(page, 'flow-raid-start');
+  await page.getByTestId('raid-skip').click();
+  await expect(page.getByTestId('raid-summary')).toBeVisible();
+  await expect(page.getByTestId('summary-gold')).toContainText('xxx');
+  await shot(page, 'flow-summary-popup');
+  await page.getByTestId('summary-continue').click();
+  await expect(page.getByTestId('offer-popup')).toBeVisible({ timeout: 30_000 });
+  await shot(page, 'flow-back-on-map');
+  expect(errors).toEqual([]);
+});

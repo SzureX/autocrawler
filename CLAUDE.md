@@ -137,12 +137,12 @@ ClassSelect → TileOffer → Prep → Action → Resolve ─┬→ TileOffer   
                                                    └→ Victory          (Boss pokonany)
 ```
 
-- **ClassSelect:** wybór 1 z 3 klas. Loch dostaje **pokój nr 1** (Komnata, jedne drzwi na wschodzie) na środku lewej krawędzi siatki (0,4).
+- **ClassSelect:** wybór 1 z 3 klas. Loch dostaje **pokój nr 1** (Komnata, drzwi na wschodzie jako wyjście i na zachodzie jako wejście bohatera) na środku lewej krawędzi siatki (0,4).
 - **TileOffer:** na mapie otwiera się popup z **3 kartami** (model pokoju, nazwa, opis, skład potworów); gracz **wybiera 1**, reszta znika. Wybrany kafelek leci na swoje miejsce na mapie i **stawia się od razu** (ma jedno legalne położenie). Gdy go nie ma albo jest wiele (Boss w zamkniętym lochu), kafelek trafia do `hand`.
 - **BossOffer:** po 10. wygranej oferta bossów, w prototypie z **1 kartą** (ten sam popup); wybrany Boss stawia się automatycznie. Kod ma obsługiwać wybór 1 z N (lista w danych), żeby wybór 1 z 3 dało się włączyć później bez zmian w `sim`.
 - **Prep:** zwykle `hand` jest pusta (kafelek stawia się sam po wyborze). **Gdy `hand` nie jest pusta** (wyjątki powyżej), przycisk Start jest nieaktywny, dopóki kafelek nie zostanie postawiony ręcznie; nie można go odłożyć. W Prep gracz też zakłada/zdejmuje artefakty, scala artefakty i przypisuje ulepszenia pokoi.
-- **Action:** rajd. Gracz może tylko zmieniać prędkość (1×/2×/4×) i klikać „Pomiń”. Brak innej interakcji (**czysty autobattler**).
-- **Resolve:** podsumowanie (loot, wynik). Wygrana: `wavesWon++`. Porażka: `lives--`.
+- **Action:** po „Start” kamera mapy płynnie wjeżdża do pokoju startowego (mgła zasłania resztę), widok przenika do rajdu, na ok. 1 s pojawia się popup „Fala x/10” (dla Bossa „Boss”), bohater wchodzi przez lewe drzwi i zaczyna się walka. Po oczyszczeniu pokoju bohater idzie do drzwi wyjściowych (drzwi się otwierają), obraz lekko przesuwa się i przenika do następnego pokoju, gdzie bohater wchodzi przez drzwi wejściowe. Gracz może tylko zmieniać prędkość (1×/2×/4×) i klikać „Pomiń”. Brak innej interakcji (**czysty autobattler**).
+- **Resolve:** popup z podsumowaniem na ostatnim pokoju (Wygrana/Przegrana, złoto jako placeholder, łup, utracone życie), przycisk „Dalej” uruchamia odjazd kamery z powrotem do widoku całej mapy (po przegranej z zerem żyć i po zwycięstwie przechodzi do ekranu końcowego). Wygrana: `wavesWon++`. Porażka: `lives--`.
 - **Po porażce gracz NIE dostaje kafelka** i wraca do Prep na tym samym lochu (budowa pomijana, bo `hand` jest pusta). Loot zebrany przed śmiercią **zostaje**.
 - **Boss:** po `wavesWon == 10` gracz **sam stawia** kafelek Bossa (regułami z 6.2), a bohater odwiedza go **zawsze na końcu trasy**. Rajd z Bossem to 11. rajd, porażka kosztuje życie jak zwykle. Pokonanie Bossa → `Victory`.
 - `lives == 0` → `GameOver`. Start: `lives = 5`.

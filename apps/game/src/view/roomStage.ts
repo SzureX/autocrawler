@@ -27,6 +27,8 @@ const THEMES: Record<string, { a: number; b: number }> = {
   temple: { a: 0x25424a, b: 0x1f383f },
   boss_room: { a: 0x3d2a52, b: 0x35244a },
 };
+/** How far a door leaf swings open (radians). */
+const DOOR_OPEN_ANGLE = 1.65;
 const DEFAULT_THEME = THEMES['chamber'] ?? { a: 0x2c3345, b: 0x262c3b };
 
 /** Floor variants per room type (keys of MODEL_FILES without the `floor:` prefix); repeats = weight. */
@@ -54,6 +56,8 @@ export class RoomStage {
   private layout: RoomLayoutDef | null = null;
   private doors: readonly Side[] = SIDES;
   private catalog: PieceCatalog | null = null;
+  /** The swinging leaf of each doorway, so a door can open when the hero comes near. */
+  private readonly leaves: Partial<Record<Side, Object3D>> = {};
   private readonly floorA = new MeshStandardMaterial({ color: DEFAULT_THEME.a, roughness: 0.9 });
   private readonly floorB = new MeshStandardMaterial({ color: DEFAULT_THEME.b, roughness: 0.9 });
   private theme: string | null = null;
@@ -166,6 +170,12 @@ export class RoomStage {
     this.buildProps();
   }
 
+  /** Swings the door on `side` open (1) or shut (0); a side without a door does nothing. */
+  setDoorOpen(side: Side, amount: number): void {
+    const leaf = this.leaves[side];
+    if (leaf) leaf.rotation.y = -amount * DOOR_OPEN_ANGLE;
+  }
+
   /** The sides that have a doorway (the others get a plain wall). */
   setDoors(doors: readonly Side[]): void {
     this.doors = doors;
@@ -234,9 +244,15 @@ export class RoomStage {
     if (!models) return;
     if (this.walls) this.content.remove(this.walls);
     const walls = new Group();
+    for (const side of SIDES) delete this.leaves[side];
     for (const w of wallPlacements(this.board, this.doors, this.lowSouth)) {
       const piece = models.create(w.model, false);
       if (!piece) continue;
+      if (w.model === 'door:doorway') {
+        const leaf = piece.getObjectByName('wall_doorway_door');
+        const side: Side = w.z < -0.1 ? 'N' : w.z > 0.1 ? 'S' : w.x < 0 ? 'W' : 'E';
+        if (leaf) this.leaves[side] = leaf;
+      }
       piece.scale.set(MODEL_SCALE * w.sx, MODEL_SCALE * w.sy, MODEL_SCALE);
       piece.position.set(w.x, 0, w.z);
       piece.rotation.y = w.yaw;

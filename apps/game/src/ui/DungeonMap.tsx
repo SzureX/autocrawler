@@ -19,6 +19,10 @@ export const MAP_HEIGHT = 720;
 export interface MapHandle {
   /** Flies the tile in from a position on the map (canvas pixels); resolves when it has landed. */
   fly: (tile: RoomTile, targetKey: string, from: { x: number; y: number }) => Promise<void>;
+  /** Zooms into a room the way the raid camera sees it; resolves when the camera has arrived. */
+  flyToRoom: (key: string) => Promise<void>;
+  /** The current frame as a picture (to blend into the next screen). */
+  snapshot: () => string | null;
 }
 
 interface Props {
@@ -31,6 +35,10 @@ interface Props {
   /** Called when a built room is clicked (assign or remove its upgrade). */
   onRoomClick?: (roomKey: string) => void;
   handleRef?: MutableRefObject<MapHandle | null>;
+  /** The map opens zoomed into this room and pulls back to the whole dungeon. */
+  introRoom?: string | null;
+  /** Called when that pull-back is over. */
+  onIntroDone?: () => void;
 }
 
 function polygonCss(points: [number, number][]): string {
@@ -41,7 +49,16 @@ function polygonCss(points: [number, number][]): string {
  * The dungeon as a 3D map (the rooms look exactly like in the raid) with a transparent layer of
  * buttons over every room, so rooms can be clicked, hovered and dropped on like before.
  */
-export function DungeonMap({ run, tile, onPlace, selectedUpgrade, onRoomClick, handleRef }: Props) {
+export function DungeonMap({
+  run,
+  tile,
+  onPlace,
+  selectedUpgrade,
+  onRoomClick,
+  handleRef,
+  introRoom,
+  onIntroDone,
+}: Props) {
   const host = useRef<HTMLDivElement>(null);
   const canvas = useRef<DungeonMapCanvas | null>(null);
   const cells = useRef<Record<string, HTMLDivElement | null>>({});
@@ -70,9 +87,19 @@ export function DungeonMap({ run, tile, onPlace, selectedUpgrade, onRoomClick, h
     const c = new DungeonMapCanvas(host.current, MAP_WIDTH, MAP_HEIGHT);
     canvas.current = c;
     c.onCamera(layoutCells);
-    void c.init().then(layoutCells);
+    void c.init().then(() => {
+      layoutCells();
+      if (introRoom) {
+        c.startClose(introRoom);
+        void c.overview().then(() => onIntroDone?.());
+      }
+    });
     if (handleRef) {
-      handleRef.current = { fly: (t, key, from) => c.flyTile(t, key, from) };
+      handleRef.current = {
+        fly: (t, key, from) => c.flyTile(t, key, from),
+        flyToRoom: (key) => c.flyToRoom(key),
+        snapshot: () => c.snapshot(),
+      };
     }
     return () => {
       if (handleRef) handleRef.current = null;

@@ -113,6 +113,7 @@ function generateRoom(seed: number, roomTypeId: string, level: number): Generate
       roomTypeId: type.id,
       upgradeId: null,
       entry,
+      approach: null,
       transit: false,
       exit: null,
       duration: 0,

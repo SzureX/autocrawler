@@ -24,6 +24,7 @@ import { builderFiles, propFiles } from './builderCatalog';
 import { sharedModels } from './models';
 import { WALL_HEIGHT, mapBounds, parseKey, roomPitch, roomRect, roomWorld } from './mapLayout';
 import { MapFog } from './mapFog';
+import { RAID_DISTANCE, RAID_FOV, RAID_LOOK_HEIGHT, RAID_START_FOCUS } from './cameraFrame';
 import { reducedMotion } from './motion';
 import { RoomStage } from './roomStage';
 import { showRoom, type RoomLook } from './roomShow';
@@ -38,6 +39,9 @@ const DROP_IN_SECONDS = 0.45;
 const SHAKE_SECONDS = 0.55;
 const SHAKE_SIZE = 0.35;
 const CAMERA_SPEED = 3.2;
+/** Slower, for the trip between the map and a room. */
+const TRIP_SPEED = 2.4;
+const TRIP_MAX_SECONDS = 2.4;
 /** Matches the far fog, so the map blends into it at the edges. */
 const BACKGROUND = 0x7c828b;
 
@@ -126,6 +130,16 @@ export class DungeonMapCanvas {
   private readonly goalFocus = new Vector3();
   private distance = 40;
   private goalDistance = 40;
+  private yaw = YAW_DEG;
+  private goalYaw = YAW_DEG;
+  private fov = FOV;
+  private goalFov = FOV;
+  /** 'close': the camera sits in one room and the rest of the dungeon is fogged over. */
+  private mode: 'overview' | 'close' = 'overview';
+  private closeKey: string | null = null;
+  private readonly weights: Record<string, number> = {};
+  private trip: { startMs: number | null; resolve: () => void } | null = null;
+  private weightsMoved = false;
   private shake = 0;
   private ready = false;
   private known = false;
@@ -282,6 +296,80 @@ export class DungeonMapCanvas {
     });
   }
 
+  /** Zooms into a room, as the raid camera sees it, with the rest of the dungeon lost in fog. */
+  flyToRoom(key: string): Promise<void> {
+    if (!this.ready) return Promise.resolve();
+    this.mode = 'close';
+    this.closeKey = key;
+    const p = parseKey(key);
+    const c = roomWorld(p.x, p.y, this.board);
+    this.goalFocus.set(c.x + RAID_START_FOCUS.x, RAID_LOOK_HEIGHT, c.z + RAID_START_FOCUS.z);
+    this.goalDistance = RAID_DISTANCE;
+    this.goalYaw = 0;
+    this.goalFov = RAID_FOV;
+    return new Promise((resolve) => {
+      this.trip = { startMs: null, resolve };
+    });
+  }
+
+  /** Starts zoomed into a room (the one the raid ended in) without any travel. */
+  startClose(key: string): void {
+    this.mode = 'close';
+    this.closeKey = key;
+    const p = parseKey(key);
+    const c = roomWorld(p.x, p.y, this.board);
+    this.focus.set(c.x, RAID_LOOK_HEIGHT, c.z);
+    this.goalFocus.copy(this.focus);
+    this.distance = RAID_DISTANCE;
+    this.goalDistance = RAID_DISTANCE;
+    this.yaw = 0;
+    this.goalYaw = 0;
+    this.fov = RAID_FOV;
+    this.goalFov = RAID_FOV;
+    for (const k of Object.keys(this.rooms)) this.weights[k] = k === key ? 1 : 0;
+    this.fogKeyDirty();
+  }
+
+  /** Pulls back from a room to the view of the whole dungeon, the fog thinning out again. */
+  overview(): Promise<void> {
+    if (!this.ready) return Promise.resolve();
+    this.mode = 'overview';
+    this.closeKey = null;
+    this.goalYaw = YAW_DEG;
+    this.goalFov = FOV;
+    this.refit();
+    return new Promise((resolve) => {
+      this.trip = { startMs: null, resolve };
+    });
+  }
+
+  /** A picture of the current frame (used to blend into the next screen). */
+  snapshot(): string | null {
+    const renderer = this.renderer;
+    if (!renderer) return null;
+    renderer.render(this.scene, this.camera);
+    return renderer.domElement.toDataURL('image/jpeg', 0.85);
+  }
+
+  private finishTrip(time: number): void {
+    const trip = this.trip;
+    if (!trip) return;
+    trip.startMs ??= time;
+    const near =
+      this.focus.distanceTo(this.goalFocus) < 0.15 &&
+      Math.abs(this.distance - this.goalDistance) < 0.2 &&
+      Math.abs(this.yaw - this.goalYaw) < 0.6;
+    if (near || time - trip.startMs > TRIP_MAX_SECONDS * 1000) {
+      this.trip = null;
+      trip.resolve();
+    }
+  }
+
+  private fogKeyDirty(): void {
+    this.dirty = true;
+    this.rebuildFog();
+  }
+
   destroy(): void {
     this.destroyed = true;
     this.renderer?.setAnimationLoop(null);
@@ -335,7 +423,9 @@ export class DungeonMapCanvas {
   /** The fog keeps away from the rooms (and from the room that is about to land). */
   private rebuildFog(): void {
     const keys = [...Object.keys(this.rooms), ...this.extra];
-    this.fog.setRects(keys.map((k) => roomRect(k, this.board)));
+    this.fog.setRooms(
+      keys.map((k) => ({ rect: roomRect(k, this.board), weight: this.weights[k] ?? 1 })),
+    );
     const key = this.legal.join('|');
     if (key === this.marksKey) return;
     this.marksKey = key;
@@ -353,6 +443,7 @@ export class DungeonMapCanvas {
 
   /** Frames every room (and the cells the camera should also show). */
   private refit(snap = false): void {
+    if (this.mode === 'close') return;
     const keys = [...Object.keys(this.rooms), ...this.extra, ...this.legal];
     const rect = mapBounds(keys, this.board);
     const corners: Vector3[] = [];
@@ -371,7 +462,9 @@ export class DungeonMapCanvas {
 
   private fitDistance(focus: Vector3, corners: Vector3[]): number {
     const probe = this.camera.clone();
-    const dir = this.direction();
+    probe.fov = FOV;
+    probe.updateProjectionMatrix();
+    const dir = this.direction(YAW_DEG);
     let lo = 4;
     let hi = 500;
     for (let i = 0; i < 28; i++) {
@@ -389,9 +482,9 @@ export class DungeonMapCanvas {
     return hi;
   }
 
-  private direction(): Vector3 {
+  private direction(yawDeg = this.yaw): Vector3 {
     const pitch = (PITCH_DEG * Math.PI) / 180;
-    const yaw = (YAW_DEG * Math.PI) / 180;
+    const yaw = (yawDeg * Math.PI) / 180;
     return new Vector3(
       -Math.sin(yaw) * Math.cos(pitch),
       Math.sin(pitch),
@@ -411,6 +504,10 @@ export class DungeonMapCanvas {
           Math.sin(this.time * 57) * shake * 0.5,
         ),
       );
+    if (Math.abs(this.camera.fov - this.fov) > 1e-3) {
+      this.camera.fov = this.fov;
+      this.camera.updateProjectionMatrix();
+    }
     this.camera.lookAt(this.focus);
     this.camera.updateMatrixWorld(true);
   }
@@ -541,12 +638,28 @@ export class DungeonMapCanvas {
     });
     if (this.shake > 0) this.shake = Math.max(0, this.shake - dt);
 
-    const k = 1 - Math.exp(-CAMERA_SPEED * dt);
-    const before = this.distance + this.focus.x + this.focus.z;
+    const k = 1 - Math.exp(-(this.trip ? TRIP_SPEED : CAMERA_SPEED) * dt);
+    const before = this.distance + this.focus.x + this.focus.z + this.yaw + this.fov;
     this.focus.lerp(this.goalFocus, k);
     this.distance += (this.goalDistance - this.distance) * k;
+    this.yaw += (this.goalYaw - this.yaw) * k;
+    this.fov += (this.goalFov - this.fov) * k;
+    for (const key of Object.keys(this.rooms)) {
+      const w = this.weights[key] ?? 1;
+      const goal = this.mode === 'close' && key !== this.closeKey ? 0 : 1;
+      if (Math.abs(goal - w) > 0.002) {
+        this.weights[key] = w + (goal - w) * k;
+        this.weightsMoved = true;
+      }
+    }
+    if (this.weightsMoved) {
+      this.weightsMoved = false;
+      this.fogKeyDirty();
+    }
     this.placeCamera();
-    const moved = Math.abs(before - (this.distance + this.focus.x + this.focus.z)) > 1e-5;
+    const moved =
+      Math.abs(before - (this.distance + this.focus.x + this.focus.z + this.yaw + this.fov)) > 1e-5;
+    this.finishTrip(time);
     if (moved || this.shake > 0) this.cameraListener?.();
 
     // Draw only when something moves; the slow fog drift and the room models that are still

@@ -88,7 +88,7 @@ describe('room presets', () => {
       expect(p.doors).toContain(p.entrance);
       expect(p.doors).toContain(p.exit);
     }
-    expect(ROOM_PRESETS.find((p) => p.id === 'start')?.doors).toEqual(['E']);
+    expect(ROOM_PRESETS.find((p) => p.id === 'start')?.doors).toEqual(['E', 'W']);
   });
 
   it('every preset draws exactly its doors and the same walls otherwise', () => {

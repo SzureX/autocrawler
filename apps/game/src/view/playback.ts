@@ -136,6 +136,15 @@ export class RaidPlayback {
     }
   }
 
+  /** The next room change that has not been applied yet (null when the raid stays put). */
+  nextRoomEnter(): { tick: number; from: Dir | null } | null {
+    for (let i = this.cursor; i < this.log.length; i++) {
+      const e = this.log[i];
+      if (e?.type === 'RoomEnter' && !e.transit) return { tick: e.tick, from: e.from };
+    }
+    return null;
+  }
+
   skipToEnd(): void {
     this.advanceTo(this.lastTick);
   }
@@ -202,8 +211,10 @@ export class RaidPlayback {
         this.movers = {};
         this.floaters = [];
         if (hero) {
-          hero.x = e.entry.x;
-          hero.y = e.entry.y;
+          // The hero appears outside the door he walks in through (a Move follows).
+          const at = e.approach ?? e.entry;
+          hero.x = at.x;
+          hero.y = at.y;
         }
         this.roomKey = e.roomKey;
         this.roomTypeId = e.roomTypeId;

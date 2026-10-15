@@ -15,7 +15,7 @@ import {
   WebGLRenderer,
   type Material,
 } from 'three';
-import type { RaidEvent } from '@loch/sim';
+import type { Dir, RaidEvent } from '@loch/sim';
 import { gameData } from '../store/gameStore';
 import {
   angleDelta,
@@ -35,6 +35,8 @@ import {
 } from './playback';
 import { builderFiles, propFiles } from './builderCatalog';
 import { sharedModels } from './models';
+import { RAID_CAMERA_OFFSET as CAMERA_OFFSET, RAID_FOV, RAID_LOOK_HEIGHT } from './cameraFrame';
+import { reducedMotion } from './motion';
 import { ShapeCache, TextureCache } from './placeholders';
 import { RoomStage } from './roomStage';
 import { MODEL_SCALE } from './wallLayout';
@@ -42,8 +44,29 @@ import { MODEL_SCALE } from './wallLayout';
 const VIEW_WIDTH = 1000;
 const VIEW_HEIGHT = 680;
 const TICK_RATE = 20;
-const CAMERA_OFFSET = { y: 7.6, z: 6.8 };
 const BAR_WIDTH = 0.8;
+/** Moving on to the next room: the picture slides and fades out, then in (seconds per half). */
+const TRANSITION_SECONDS = 0.22;
+const TRANSITION_PX = 70;
+/** A door opens when the hero is this close (in cells) and shuts when he walks away. */
+const DOOR_OPEN_DISTANCE = 2.4;
+/** Switch for the door-opening animation (an experiment; off leaves the doorways as they are). */
+const ANIMATE_DOORS = true;
+/** Screen direction the picture slides in when the hero leaves through a door on that side. */
+const SLIDE: Record<Dir, { x: number; y: number }> = {
+  E: { x: -1, y: 0 },
+  W: { x: 1, y: 0 },
+  N: { x: 0, y: 1 },
+  S: { x: 0, y: -1 },
+};
+
+interface Transition {
+  phase: 'out' | 'in';
+  t: number;
+  dir: Dir;
+  /** Tick of the room change that waits until the picture has faded out. */
+  enterTick: number;
+}
 /** Clip played for each animation state (names from the Rig_Medium packs). */
 const CLIPS = {
   idle: 'Idle_A',
@@ -127,7 +150,7 @@ interface UnitView {
 export class RaidCanvas {
   private renderer: WebGLRenderer | null = null;
   private readonly scene = new Scene();
-  private readonly camera = new PerspectiveCamera(45, VIEW_WIDTH / VIEW_HEIGHT, 0.1, 100);
+  private readonly camera = new PerspectiveCamera(RAID_FOV, VIEW_WIDTH / VIEW_HEIGHT, 0.1, 100);
   private readonly board = gameData.balance.combat.board;
   private readonly stage = new RoomStage(this.board);
   private readonly shapes = new ShapeCache();
@@ -148,6 +171,8 @@ export class RaidCanvas {
   private skipRequested = false;
   private lastTime: number | null = null;
   private listeners: ((s: PlaybackState) => void)[] = [];
+  private trans: Transition | null = null;
+  private readonly doorOpen: Record<Dir, number> = { N: 0, E: 0, S: 0, W: 0 };
 
   constructor(private readonly host: HTMLElement) {
     this.scene.background = new Color(0x14161c);
@@ -197,6 +222,7 @@ export class RaidCanvas {
 
   skip(): void {
     this.skipRequested = true;
+    this.endTransition();
     this.playback?.skipToEnd();
     this.sync(0);
     this.emit();
@@ -264,13 +290,70 @@ export class RaidCanvas {
     this.lastTime = timeMs;
     const pb = this.playback;
     let advanced = false;
-    if (pb && !this.paused && !pb.done) {
-      pb.advanceTo(pb.tick + dt * TICK_RATE * this.speed);
-      advanced = true;
+    if (pb && !this.paused) {
+      if (this.trans) {
+        this.runTransition(dt, pb);
+        advanced = true;
+      } else if (!pb.done) {
+        const target = pb.tick + dt * TICK_RATE * this.speed;
+        const next = this.roomKey !== null && !reducedMotion() ? pb.nextRoomEnter() : null;
+        if (next && next.tick <= target) {
+          // Stop right before the room change; it happens while the picture is faded out.
+          pb.advanceTo(next.tick - 0.001);
+          this.trans = { phase: 'out', t: 0, dir: next.from ?? 'E', enterTick: next.tick };
+        } else pb.advanceTo(target);
+        advanced = true;
+      }
     }
     this.sync(dt, timeMs / 1000);
     if (advanced) this.emit();
     this.renderer?.render(this.scene, this.camera);
+  }
+
+  /** Slides and fades the picture out, changes the room, then slides and fades it in. */
+  private runTransition(dt: number, pb: RaidPlayback): void {
+    const tr = this.trans;
+    const canvas = this.renderer?.domElement;
+    if (!tr || !canvas) return;
+    tr.t += dt / (TRANSITION_SECONDS / Math.min(this.speed, 2));
+    const k = Math.min(1, tr.t);
+    const ease = k * k * (3 - 2 * k);
+    const slide = SLIDE[tr.dir];
+    if (tr.phase === 'out') {
+      canvas.style.opacity = String(1 - ease);
+      canvas.style.transform = `translate(${slide.x * ease * TRANSITION_PX}px, ${slide.y * ease * TRANSITION_PX}px)`;
+      if (tr.t >= 1) {
+        pb.advanceTo(tr.enterTick);
+        tr.phase = 'in';
+        tr.t = 0;
+      }
+      return;
+    }
+    canvas.style.opacity = String(ease);
+    canvas.style.transform = `translate(${-slide.x * (1 - ease) * TRANSITION_PX}px, ${-slide.y * (1 - ease) * TRANSITION_PX}px)`;
+    if (tr.t >= 1) this.endTransition();
+  }
+
+  private endTransition(): void {
+    this.trans = null;
+    const canvas = this.renderer?.domElement;
+    if (canvas) {
+      canvas.style.opacity = '';
+      canvas.style.transform = '';
+    }
+  }
+
+  /** A picture of the current frame (used to blend into the next screen). */
+  snapshot(): string | null {
+    const renderer = this.renderer;
+    if (!renderer) return null;
+    renderer.render(this.scene, this.camera);
+    return renderer.domElement.toDataURL('image/jpeg', 0.85);
+  }
+
+  /** Key of the room being shown (null before the raid is loaded). */
+  currentRoomKey(): string | null {
+    return this.roomKey;
   }
 
   private heroWorld(state: PlaybackState): Vec2 | null {
@@ -287,7 +370,7 @@ export class RaidCanvas {
 
   private placeCamera(): void {
     this.camera.position.set(this.focus.x, CAMERA_OFFSET.y, this.focus.z + CAMERA_OFFSET.z);
-    this.camera.lookAt(this.focus.x, 0.3, this.focus.z);
+    this.camera.lookAt(this.focus.x, RAID_LOOK_HEIGHT, this.focus.z);
   }
 
   /** Brings the 3D scene in line with the playback state (units, floaters, camera). */
@@ -295,7 +378,8 @@ export class RaidCanvas {
     const state = this.playback?.snapshot();
     if (!state) return;
     this.stage.setTheme(state.roomTypeId);
-    if (state.roomKey !== this.roomKey) {
+    const roomChanged = state.roomKey !== this.roomKey;
+    if (roomChanged) {
       this.roomKey = state.roomKey;
       this.snapFocus();
       this.showRoom(state.doors, state.layoutId);
@@ -346,6 +430,7 @@ export class RaidCanvas {
       return false;
     });
 
+    this.syncDoors(state, dt, roomChanged);
     this.syncChest(state.chest, state.tick);
     this.syncFloaters(state);
 
@@ -359,6 +444,29 @@ export class RaidCanvas {
       };
     }
     this.placeCamera();
+  }
+
+  /** Doors swing open while the hero is near them (also when he is still outside). */
+  private syncDoors(state: PlaybackState, dt: number, snap: boolean): void {
+    const hero = state.units.find((u) => u.id === 0);
+    if (!ANIMATE_DOORS || !hero) return;
+    const { width, height } = this.board;
+    const cx = Math.floor(width / 2);
+    const cy = Math.floor(height / 2);
+    const doors: Record<Dir, { x: number; y: number }> = {
+      N: { x: cx, y: 0 },
+      S: { x: cx, y: height - 1 },
+      W: { x: 0, y: cy },
+      E: { x: width - 1, y: cy },
+    };
+    for (const side of state.doors) {
+      const d = doors[side];
+      const goal = Math.hypot(hero.x - d.x, hero.y - d.y) < DOOR_OPEN_DISTANCE ? 1 : 0;
+      this.doorOpen[side] = snap
+        ? 0
+        : this.doorOpen[side] + (goal - this.doorOpen[side]) * smoothing(dt, 9);
+      this.stage.setDoorOpen(side, this.doorOpen[side]);
+    }
   }
 
   private disposeUnit(view: UnitView): void {
